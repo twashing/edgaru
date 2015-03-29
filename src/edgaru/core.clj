@@ -27,6 +27,30 @@
              (map (fn [x] {:price x}) pricelist))
         (map (fn [x] (merge (first x) (second x)))))))
 
+(defn seque-timeseries
+
+  ([timeseries]
+   (seque-timeseries timeseries println))
+
+  ([timeseries handlefn]
+
+   (let [start (System/nanoTime)
+         sequed-series (seque timeseries)]
+
+     (loop [ech (first sequed-series)
+            sseries (rest sequed-series)]
+
+       (let [t1 (:time ech)
+             t2 (:time (first sseries))
+             tdiff (t/in-millis (t/interval t1 t2))]
+
+         (Thread/sleep tdiff)
+         (handlefn ech)
+         (if-not (empty? sseries)
+           (recur (first sseries)
+                  (rest sseries))))))))
+
+
 (comment
 
   ;; generate a raw infinite list of floats within a given range
@@ -38,24 +62,10 @@
   ;; generate a timeseries based on thoe numbers
   (def timeseries (take 10 (generate-timeseries pricelist)))
 
-  ;; => ({:price 6.498531167254335, :time 0} {:price 14.932585251457299, :time 1} {:price 7.1285417453458795, :time 2} {:price 12.81164293198097, :time 3} {:price 7.244480692160645, :time 4} {:price 13.19382349693832, :time 5} {:price 6.261360701619896, :time 6} {:price 10.569452494512952, :time 7} {:price 9.851295409730925, :time 8} {:price 6.778911488317861, :time 9})
+  ;; => ({:price 5.852272525350649, :time #<DateTime 2015-03-29T21:30:51.597Z>} {:price 8.208107304603185, :time #<DateTime 2015-03-29T21:30:54.597Z>} {:price 6.699840469547221, :time #<DateTime 2015-03-29T21:30:57.597Z>} {:price 14.948099116071878, :time #<DateTime 2015-03-29T21:31:00.597Z>} {:price 6.464008119974569, :time #<DateTime 2015-03-29T21:31:03.597Z>} {:price 10.730217701375798, :time #<DateTime 2015-03-29T21:31:03.597Z>} {:price 5.79199822748032, :time #<DateTime 2015-03-29T21:31:04.597Z>} {:price 6.868313897063726, :time #<DateTime 2015-03-29T21:31:04.597Z>} {:price 10.747576562437228, :time #<DateTime 2015-03-29T21:31:07.597Z>} {:price 8.084101904890087, :time #<DateTime 2015-03-29T21:31:10.597Z>})
 
 
-  (def one (t/now))
-
-  (def two (t/plus one (t/seconds 1)))
-
-  (let [start (System/nanoTime)
-        q (seque
-           (iterate
-            #(do (Thread/sleep 400) (inc %))
-            0))]
-
-    (println "sleep five seconds...")
-    (Thread/sleep 5000)
-
-    (doseq [i (take 20 q)]
-      (println (int (/ (- (System/nanoTime) start) 1e7))
-               ":" i)))
+  ;; execute a side-effecting function over the time series
+  (seque-timeseries timeseries)
 
   )
