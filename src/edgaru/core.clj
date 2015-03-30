@@ -11,7 +11,7 @@
 
 (defn random-in-range [lower upper]
 
-  (let [r (+ (rand (- (+ 1 upper) lower))
+  (let [r (+ (rand (- upper lower))
              lower)]
 
     (if (> r upper)
@@ -22,7 +22,8 @@
      (- high-price low-price)))
 
 (defn k-plusORMinus [k plus-OR-minus]
-  (as-> (plus-OR-minus 1 k) rS
+
+  (as-> (if (< k 0.5) (plus-OR-minus 1 k) (Math/abs (plus-OR-minus k 1))) rS
         (if (= (int rS) 0)
             (+ 0.15 rS)
             rS)
@@ -80,7 +81,7 @@
 (defn seque-timeseries
 
   ([timeseries]
-   (seque-timeseries timeseries timbre/debug))
+   (seque-timeseries timeseries println))
 
   ([timeseries handlefn]
 
@@ -102,6 +103,10 @@
 
 
 (comment
+
+
+  (timbre/set-level! :debug)
+
 
   ;; generate a raw infinite list of floats within a given range
   (def pricelist (generate-prices 5 15))
