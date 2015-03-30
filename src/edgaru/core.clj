@@ -8,14 +8,62 @@
 (defn reload-project []
   (alembic.still/load-project))
 
+(defn random-in-range [lower upper]
+
+  (let [r (+ (rand (- (+ 1 upper) lower))
+             lower)]
+
+    (if (> r upper)
+      upper r)))
+
+(defn stochastic-k [last-price low-price high-price]
+  (/ (- last-price low-price)
+     (- high-price low-price)))
+
+(defn k-plusORMinus [k plus-OR-minus]
+  (as-> (plus-OR-minus 1 k) rS
+        (if (= (int rS) 0)
+            (+ 0.15 rS)
+            rS)
+        (if (= (int rS) 1)
+          (plus-OR-minus rS 0.15) rS)))
+
+
+(defn generate-newlow [newprice low high]
+  (if (< newprice low)
+    newprice
+    low))
+
+(defn generate-newhigh [newprice low high]
+  (if (> newprice high)
+    newprice
+    high))
+
 (defn generate-prices
 
-  ([upper-bound]
-   (generate-prices 0 upper-bound))
+  ([low high]
+   (generate-prices (random-in-range low high) low high))
 
-  ([lower-bound upper-bound]
-   (filter #(>= % lower-bound)
-           (repeatedly #(rand upper-bound)))))
+  ([last-price low high]
+
+   (iterate (fn [{:keys [last lows highs]}]
+
+              (let [low (-> lows sort first)
+                    high (-> highs sort reverse first)
+                    k (stochastic-k last low high)
+                    plus-OR-minus (rand-nth [- +])
+                    kPM (k-plusORMinus k plus-OR-minus)
+
+                    newprice (* kPM last)
+                    newlow (generate-newlow newprice low high)
+                    newhigh (generate-newhigh newprice low high)]
+
+                (println (str "k[" k "] / kPM[" kPM "] / newprice[" newprice "] <=> [" last " | " low " | " high "]"))
+                {:last newprice
+                 :lows (into [] (take 5 (conj lows newlow)))
+                 :highs (into [] (take 5 (conj highs newhigh)))}))
+
+            {:last last-price :lows [low] :highs [high]})))
 
 (defn generate-timeseries
 
@@ -23,7 +71,8 @@
    (generate-timeseries pricelist (t/now)))
 
   ([pricelist datetime]
-   (->> (map (fn [x y] [x y]) (map (fn [x] {:time x}) (iterate #(t/plus % (t/seconds (rand 4))) datetime))
+   (->> (map (fn [x y] [x y])
+             (map (fn [x] {:time x}) (iterate #(t/plus % (t/seconds (rand 4))) datetime))
              (map (fn [x] {:price x}) pricelist))
         (map (fn [x] (merge (first x) (second x)))))))
 
