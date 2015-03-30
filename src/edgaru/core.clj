@@ -1,5 +1,6 @@
 (ns edgaru.core
   (:require [alembic.still]
+            [taoensso.timbre :as timbre]
             [clojure.pprint :as pp]
             [clj-time.core :as t]
             [clj-time.periodic :as p]))
@@ -48,8 +49,8 @@
 
    (iterate (fn [{:keys [last lows highs]}]
 
-              (let [low (-> lows sort first)
-                    high (-> highs sort reverse first)
+              (let [low (-> lows first)
+                    high (-> highs reverse first)
                     k (stochastic-k last low high)
                     plus-OR-minus (rand-nth [- +])
                     kPM (k-plusORMinus k plus-OR-minus)
@@ -58,7 +59,7 @@
                     newlow (generate-newlow newprice low high)
                     newhigh (generate-newhigh newprice low high)]
 
-                (println (str "k[" k "] / kPM[" kPM "] / newprice[" newprice "] <=> [" last " | " low " | " high "]"))
+                (timbre/debug (str "k[" k "] / kPM[" kPM "] / newprice[" newprice "] <=> [" last " | " low " | " high "]"))
                 {:last newprice
                  :lows (into [] (take 5 (conj lows newlow)))
                  :highs (into [] (take 5 (conj highs newhigh)))}))
@@ -79,7 +80,7 @@
 (defn seque-timeseries
 
   ([timeseries]
-   (seque-timeseries timeseries println))
+   (seque-timeseries timeseries timbre/debug))
 
   ([timeseries handlefn]
 
@@ -105,13 +106,9 @@
   ;; generate a raw infinite list of floats within a given range
   (def pricelist (generate-prices 5 15))
 
-  ;; => (14.425231029100223 12.561596873601552 9.015979284812179 7.20001565607321 5.001856661709986 11.495735016910736 8.726872997660886 14.28593925643085 6.002666920761813 10.198040792662994 ...)
-
 
   ;; generate a timeseries based on thoe numbers
   (def timeseries (take 10 (generate-timeseries pricelist)))
-
-  ;; => ({:price 5.852272525350649, :time #<DateTime 2015-03-29T21:30:51.597Z>} {:price 8.208107304603185, :time #<DateTime 2015-03-29T21:30:54.597Z>} {:price 6.699840469547221, :time #<DateTime 2015-03-29T21:30:57.597Z>} {:price 14.948099116071878, :time #<DateTime 2015-03-29T21:31:00.597Z>} {:price 6.464008119974569, :time #<DateTime 2015-03-29T21:31:03.597Z>} {:price 10.730217701375798, :time #<DateTime 2015-03-29T21:31:03.597Z>} {:price 5.79199822748032, :time #<DateTime 2015-03-29T21:31:04.597Z>} {:price 6.868313897063726, :time #<DateTime 2015-03-29T21:31:04.597Z>} {:price 10.747576562437228, :time #<DateTime 2015-03-29T21:31:07.597Z>} {:price 8.084101904890087, :time #<DateTime 2015-03-29T21:31:10.597Z>})
 
 
   ;; execute a side-effecting function over the time series
