@@ -119,4 +119,8 @@
   ;; execute a side-effecting function over the time series
   (seque-timeseries timeseries)
 
+  (filter (fn [x] (>= x 12))
+          (repeatedly (fn [] (rand 35))))
+
+
   )
