@@ -50,8 +50,8 @@
 
 
 ;;
-((t1 29.60706184716407) (t2 12.507593971664075))  ;; will produce an error
-(t1 29.60706184716407)  ;; will produce an error
+;;((t1 29.60706184716407) (t2 12.507593971664075))  ;; will produce an error
+;;(t1 29.60706184716407)  ;; will produce an error
 '((t1 29.60706184716407) (t2 12.507593971664075))
 
 
@@ -61,7 +61,7 @@
 :a
 :fubar
 :thing
-fubar  ;; will produce an error
+;;fubar  ;; will produce an error
 (def fubar 1)
 (def thing 2)
 {:fubar 1}
@@ -178,7 +178,7 @@ fubar  ;; will produce an error
                     newlow (if (< newprice low) newprice low)
                     newhigh (if (> newprice high) newprice high)]
 
-                (println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
+                ;;(println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
                 {:last newprice
                  :lows (take 5 (conj lows newlow))
                  :highs (take 5 (conj highs newhigh))}))
