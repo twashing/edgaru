@@ -1,6 +1,31 @@
 (ns edgaru.four
   (:require [edgaru.three :as thr]))
 
+
+(reduce (fn [rslt ech]
+
+                     (let [etal-keys [:last-trade-price :last-trade-time]
+                           output-key :output
+                           tsum (reduce (fn [rslt inp]
+
+                                          (println (str rslt " <==> " inp))
+                                          (let [ltprice (:last (:last-trade-price inp))]
+                                            (+ ltprice rslt))) 0 ech)
+                           taverage (/ tsum (count ech)) ]
+
+                       (cons (merge
+
+                              (zipmap etal-keys
+                                      (map #(% (first ech)) etal-keys))
+
+
+                              {output-key taverage
+                               :population ech})
+                             rslt)))
+
+                   (into '() (repeat 20 nil))
+                   (reverse (partition 20 1 timeseries)))
+
 (defn exponential-moving-average
   "From a tick-list, generates an accompanying exponential moving average list.
      EMA = price(today) * k + EMA(yesterday) * (1 - k)

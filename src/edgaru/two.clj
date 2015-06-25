@@ -193,8 +193,8 @@
 
   ([pricelist datetime]
    (->> (map (fn [x y] [x y])
-             (map (fn [x] {:time x}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
-             (map (fn [x] {:price x}) pricelist))
+             (map (fn [x] {:last-trade-time x}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
+             (map (fn [x] {:last-trade-price x}) pricelist))
         (map (fn [x] (merge (first x) (second x)))))))
 
 

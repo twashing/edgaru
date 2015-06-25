@@ -65,10 +65,13 @@
     (reduce (fn [rslt ech]
 
               (let [tsum (reduce (fn [rslt inp]
-                                   (let [ltprice (input-key inp)]
-                                     (+ (if (string? ltprice) (read-string ltprice) ltprice) rslt))) 0 ech)   ;; sum it up
-                    taverage (/ tsum (count ech))   ;; get the average
-                    ]
+                                   (let [ltprice (:last (input-key inp))]
+
+                                     ;; sum it up
+                                     (+ ltprice rslt))) 0 ech)
+
+                    ;; get the average
+                    taverage (/ tsum (count ech))]
 
                 (cons (merge
 
@@ -85,4 +88,30 @@
             (reverse (partition tick-window 1 tick-list)))))
 
 ;;
-(simple-moving-average {} pricelist 20)
+(comment
+
+  (def sma-list (take 2 (simple-moving-average {} 20 timeseries)))
+
+  (def one (reduce (fn [rslt ech]
+
+                     (let [etal-keys [:last-trade-price :last-trade-time]
+                           output-key :output
+                           tsum (reduce (fn [rslt inp]
+
+                                          (let [ltprice (:last (:last-trade-price inp))]
+                                            (+ ltprice rslt))) 0 ech)
+                           taverage (/ tsum (count ech)) ]
+
+                       (cons (merge
+
+                              (zipmap etal-keys
+                                      (map #(% (first ech)) etal-keys))
+
+                              {output-key taverage
+                               :population ech})
+                             rslt)))
+
+                   (into '() (repeat 20 nil))
+                   (partition 20 1 timeseries)))
+
+  )
