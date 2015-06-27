@@ -2,40 +2,38 @@
   (:require [edgaru.two :as two]
             [edgaru.three :as three]))
 
+
+;; Refactor price-list
 (declare timeseries)
 (def price-list (two/generate-prices 5 15))
-
-
 '({:last 10.978625695681702, :lows [5], :highs [15]}
- {:last 15.393542022616002,
-  :lows (5 5),
-  :highs (15 15.393542022616002)}
- {:last 15.68497326182313,
-  :lows (5 5 5),
-  :highs (15.68497326182313 15 15.393542022616002)}
- {:last 17.894866781714637,
-  :lows (5 5 5 5),
-  :highs (17.894866781714637 15.68497326182313 15 15.393542022616002)}
- {:last 19.178454686228328,
-  :lows (5 5 5 5 5),
-  :highs
-  (19.178454686228328
-   17.894866781714637
-   15.68497326182313
-   15
-   15.393542022616002)})
+  {:last 15.393542022616002,
+   :lows (5 5),
+   :highs (15 15.393542022616002)}
+  {:last 15.68497326182313,
+   :lows (5 5 5),
+   :highs (15.68497326182313 15 15.393542022616002)}
+  {:last 17.894866781714637,
+   :lows (5 5 5 5),
+   :highs (17.894866781714637 15.68497326182313 15 15.393542022616002)}
+  {:last 19.178454686228328,
+   :lows (5 5 5 5 5),
+   :highs
+   (19.178454686228328
+    17.894866781714637
+    15.68497326182313
+    15
+    15.393542022616002)})
 
 (defn extract-price-only [price-list]
   (map :last price-list))
 
 (def price-only-list (extract-price-only (two/generate-prices 5 15)))
-
 '(10.978625695681702
   15.393542022616002
   15.68497326182313
   17.894866781714637
   19.178454686228328)
-
 
 (def time-series (two/generate-timeseries price-only-list))
 
@@ -51,6 +49,7 @@
    :last-trade-time #<DateTime 2015-06-27T17:54:42.583Z>})
 
 
+;; Refactor simple-moving-average
 (partition 20 1 (range 40))
 '((0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
  (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
@@ -89,22 +88,18 @@
 
     (reduce (fn [rslt ech]
 
-              (let [tsum (reduce (fn [rslt ech]
-                                   (let [ltprice (:last-trade-price ech)]
-                                     (+ ltprice rslt))) 0 ech)
+              (let [tsum (reduce (fn [rr ee]
+                                   (let [ltprice (:last-trade-price ee)]
+                                     (+ ltprice rr))) 0 ech)
 
                     taverage (/ tsum (count ech))]
 
-                #spy/d ech
                 (lazy-cat rslt
-
-                          (merge
-
-                           (zipmap etal-keys
-                                   (map #(% ech) etal-keys))
-
-                           '({output-key taverage
-                               :population ech})))))
+                          [(merge
+                             (zipmap etal-keys
+                                     (map #(% (last ech)) etal-keys))
+                             {output-key taverage
+                              :population ech})])))
             '()
             (partition tick-window
                        1
@@ -201,6 +196,36 @@
              ema-list
              (->> sma-list (remove nil?) reverse)))))
 
+;; Destructuring
+`
+(let [{input-key :input
+       output-key :output
+       etal-keys :etal
+       :or {input-key :last-trade-price
+            output-key :last-trade-price-exponential
+            etal-keys [:last-trade-price :last-trade-time]}}
+      {:input :input-key
+       :output :output-key
+       :etal [:one :two]}]
+
+  (println input-key)
+  (println output-key)
+  (println etal-keys))
+
+
+(let [{input-key :input
+       output-key :output
+       etal-keys :etal
+       :or {input-key :last-trade-price
+            output-key :last-trade-price-exponential
+            etal-keys [:last-trade-price :last-trade-time]}}
+      nil]
+
+  (println input-key)
+  (println output-key)
+  (println etal-keys))
+
+
 (defn bollinger-band
   "From a tick-list, generates an accompanying list with upper-band and lower-band
      Upper Band: K times an N-period standard deviation above the moving average (MA + Kσ)
@@ -252,3 +277,7 @@
                        rslt)))
              bollinger-list
              (->> sma-list (remove nil?) reverse)))))
+
+(comment
+
+        )
