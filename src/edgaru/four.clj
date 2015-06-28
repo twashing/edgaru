@@ -38,15 +38,44 @@
 (def time-series (two/generate-timeseries price-only-list))
 
 '({:last-trade-price 10.774174002394385,
-   :last-trade-time #<DateTime 2015-06-27T17:54:37.583Z>}
+   :last-trade-time #inst "2015-06-27T17:54:37.583Z"}
   {:last-trade-price 6.221195542189912,
-   :last-trade-time #<DateTime 2015-06-27T17:54:40.583Z>}
+   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
   {:last-trade-price 6.98092516851132,
-   :last-trade-time #<DateTime 2015-06-27T17:54:40.583Z>}
+   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
   {:last-trade-price 5.5980561319315,
-   :last-trade-time #<DateTime 2015-06-27T17:54:40.583Z>}
+   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
   {:last-trade-price 5.263260952271663,
-   :last-trade-time #<DateTime 2015-06-27T17:54:42.583Z>})
+   :last-trade-time #inst "2015-06-27T17:54:42.583Z"})
+
+
+;; Destructuring
+(let [{input-key :input
+       output-key :output
+       etal-keys :etal
+       :or {input-key :last-trade-price
+            output-key :last-trade-price-exponential
+            etal-keys [:last-trade-price :last-trade-time]}}
+      {:input :input-key
+       :output :output-key
+       :etal [:one :two]}]
+
+  (println input-key)
+  (println output-key)
+  (println etal-keys))
+
+
+(let [{input-key :input
+       output-key :output
+       etal-keys :etal
+       :or {input-key :last-trade-price
+            output-key :last-trade-price-exponential
+            etal-keys [:last-trade-price :last-trade-time]}}
+      nil]
+
+  (println input-key)
+  (println output-key)
+  (println etal-keys))
 
 
 ;; Refactor simple-moving-average
@@ -106,31 +135,6 @@
                        (take (* 2 tick-window) tick-list)))))
 
 
-(comment (reduce (fn [rslt ech]
-
-                   (let [etal-keys [:last-trade-price :last-trade-time]
-                         output-key :output
-                         tsum (reduce (fn [rslt inp]
-
-                                        (println (str rslt " <==> " inp))
-                                        (let [ltprice (:last (:last-trade-price inp))]
-                                          (+ ltprice rslt))) 0 ech)
-                         taverage (/ tsum (count ech)) ]
-
-                     (cons (merge
-
-                            (zipmap etal-keys
-                                    (map #(% (first ech)) etal-keys))
-
-
-                            {output-key taverage
-                             :population ech})
-                           rslt)))
-
-                 (into '() (repeat 20 nil))
-                 (reverse (partition 20 1 timeseries))))
-
-
 (defn exponential-moving-average
   "From a tick-list, generates an accompanying exponential moving average list.
      EMA = price(today) * k + EMA(yesterday) * (1 - k)
@@ -145,8 +149,7 @@
    ** This function assumes the latest tick is on the left**"
 
   ([options tick-window tick-list]
-
-   (exponential-moving-average options tick-window tick-list (three/simple-moving-average nil tick-window tick-list)))
+   (exponential-moving-average options tick-window tick-list (three/simple-moving-average {} tick-window tick-list)))
 
   ([options tick-window tick-list sma-list]
 
@@ -154,7 +157,6 @@
    ;; k = 2 / N + 1
    ;; N = number of days
    (let [k (/ 2 (+ tick-window 1))
-         ema-list (into '() (repeat tick-window nil))
 
          {input-key :input
           output-key :output
@@ -167,7 +169,6 @@
      (reduce (fn [rslt ech]
 
                ;; 3. calculate the EMA ( for the first tick, EMA(yesterday) = MA(yesterday) )
-
                (let [;; price(today)
                      ltprice (input-key ech)
 
@@ -177,54 +178,26 @@
                                 (input-key ech))
 
                      ;; ** EMA now = price(today) * k + EMA(yesterday) * (1 - k)
-                     ema-now (+ (* k (if (string? ltprice)
-                                       (read-string ltprice)
-                                       ltprice))
-                                (* (if (string? ema-last) (read-string ema-last) ema-last) (- 1 k)))]
+                     ema-now (+ (* k ltprice)
+                                (* ema-last (- 1 k)))]
 
-                 (cons (merge
+                 (lazy-cat rslt
+                           [(merge
+                             (zipmap etal-keys
+                                     (map #(% (last (:population ech))) etal-keys))
+                             {output-key ema-now})])))
+             '()
+             sma-list))))
 
-                        ;; will produce a map of etal-keys, with associated values in ech
-                        (zipmap etal-keys
-                                (map #(% ech) etal-keys))
+(comment
 
-                        ;; and merge the output key to the map
-                        {output-key ema-now})
+  (def price-only-list (extract-price-only (two/generate-prices 5 15)))
+  (def time-series (two/generate-timeseries price-only-list))
 
-                       ;; and prepend the result to our running list
-                       rslt)))
-             ema-list
-             (->> sma-list (remove nil?) reverse)))))
+  (def sma-list (simple-moving-average {} 20 time-series))
+  (def ema-list (exponential-moving-average {} 20 time-series sma-list))
 
-;; Destructuring
-`
-(let [{input-key :input
-       output-key :output
-       etal-keys :etal
-       :or {input-key :last-trade-price
-            output-key :last-trade-price-exponential
-            etal-keys [:last-trade-price :last-trade-time]}}
-      {:input :input-key
-       :output :output-key
-       :etal [:one :two]}]
-
-  (println input-key)
-  (println output-key)
-  (println etal-keys))
-
-
-(let [{input-key :input
-       output-key :output
-       etal-keys :etal
-       :or {input-key :last-trade-price
-            output-key :last-trade-price-exponential
-            etal-keys [:last-trade-price :last-trade-time]}}
-      nil]
-
-  (println input-key)
-  (println output-key)
-  (println etal-keys))
-
+  )
 
 (defn bollinger-band
   "From a tick-list, generates an accompanying list with upper-band and lower-band
