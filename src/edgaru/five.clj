@@ -22,14 +22,8 @@
 
 (defn sine [a b x d]
 
-  (* a
-     (Math/sin (* b
-                  (- x
-                     (/ Math/PI 2)))))
-  )
-
-
-
-(comment
-
-  )
+  (- (* a
+         (Math/sin (* b
+                      (- x
+                         (/ Math/PI 2)))))
+     d))
