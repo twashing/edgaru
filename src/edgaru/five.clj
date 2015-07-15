@@ -29,23 +29,56 @@
      d))
 
 
-(defn find-xintercepts [mfn]
+(defn ydirection [ypos]
+  (if (pos? ypos)
+    :positive
+    :negative))
 
-  ;; find x-intercepts both left and right from x=0.
+(defn direction-changed? [ypos dirn]
+  (not (= (ydirection ypos)
+          dirn)))
+
+(defn get-opposite-direction-key [ydir]
+  (if (= ydir :positive)
+    :negative
+    :positive))
+
+(defn get-opposite-direction-fn [dirn]
+  (if (= dirn +) - +))
+
+;; find x-intercepts both left and right from x=0.
+(defn find-xintercept [direction mfn]
 
   ;; find initial direction of y (take y at 0.1 of x=0)
   ;; step 1 in given direction until we pass through x
-  ;; divide that step in half and go the other direction, until we again pass through x
-  ;; repeat until we have a zero up to the 7th digit
-  )
+  (loop [start-point 0.0
+         distance    1.0
+         ydir        (ydirection (mfn (direction 0 0.1)))
+         dirn        direction]
+
+    ;; divide that step in half and go the other direction, until we again pass through x
+    ;; repeat until we have a zero up to the 7th digit
+    (let [next-point (dirn start-point distance)]
+
+      (if (= 0.0 (Double. (format "%.7f" (mfn next-point))))
+        next-point
+        (let [dc? (direction-changed? (mfn next-point) ydir)]
+
+          (println (str "start[" start-point "] / end[" next-point "] / direction-changed?[" dc? "] / Y[" (mfn next-point) "]"))
+
+          (recur next-point
+                 (if dc? (/ distance 2) distance)
+                 (if dc? (get-opposite-direction-key ydir) ydir)
+                 (if dc? (get-opposite-direction-fn dirn) dirn)))))))
 
 
-;; case , cond , multi methods , pattern matching (core.match)
+
+;; loop / recur
 
 ;; phases - figuring out x intercepts
-
 ;; repeatable
 ;;   mark phase start / end
+
 ;; vertical dilation
 ;; horizontal dilation
 ;; granularity
@@ -60,3 +93,10 @@
 ;; randomize horizontal dilation (between 2 - 0.5 (larger b yields a narrower curve))
 ;; randomize granularity, or zoom of sample (between 0.1 - 1)
 ;; beta distribution of a=2 b=4 x=0 (see: http://keisan.casio.com/exec/system/1180573226)
+
+
+;; Traversing Data
+;; Branching and Conditional Dispatch
+;;   case , cond , multi methods , pattern matching (core.match)
+;; sorting, grouping, filtering, dequeing
+;; Scalars: numbers & precision
