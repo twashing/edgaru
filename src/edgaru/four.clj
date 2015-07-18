@@ -28,6 +28,9 @@
 (defn extract-price-only [price-list]
   (map :last price-list))
 
+(defn generate-prices-without-population [beginning-low beginning-high]
+  (extract-price-only (two/generate-prices beginning-low beginning-high)) )
+
 (def price-only-list (extract-price-only (two/generate-prices 5 15)))
 '(10.978625695681702
   15.393542022616002

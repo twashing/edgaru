@@ -1,4 +1,7 @@
-(ns edgaru.five)
+(ns edgaru.five
+  (:require [edgaru.two :as two]
+            [edgaru.four :as four])
+  (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 
 ;; ==>
@@ -144,43 +147,129 @@
     (partial mathfn-curried b)))
 
 
-(comment
-
-  (def one (randomize-vertical-dilation polynomial 0.5 2))
-  (def two (randomize-horizontal-dilation one 0.5 2))
-  (def polyn-partial (partial two 3))
-
-
-  (def xinterc-left (find-xintercept - polynomial-xintercept))
-  -1.8228756561875343
-
-  (def xinterc-right (find-xintercept + polynomial-xintercept))
-  0.8228756487369537
-
-  (def granularity (rand-double-in-range 0.1 1))
-  (def xsequence (iterate (partial + granularity) xinterc-left))
-
-  ;; FINAL - these are our price values (y @ respective x granularity)
-  (map polyn-partial (take 10 xsequence))
-
-  )
-
 ;; granularity
 ;; => randomize granularity, or zoom of sample
 ;;   polynomial:  between 0.1 - 1
 ;;   sine:  between 0.1 - 1
 
+(comment
+
+
+  ;; ==> polynomial
+  (def one (randomize-vertical-dilation polynomial 0.5 2))
+  (def two (randomize-horizontal-dilation one 0.5 2))
+  (def polyn-partial (partial two 3))
+
+  (def xinterc-polyn-left (find-xintercept - polynomial-xintercept))
+  (def xinterc-polyn-right (find-xintercept + polynomial-xintercept))
+
+
+  (def granularityP (rand-double-in-range 0.1 1))
+  (def xsequenceP (iterate (partial + granularityP) xinterc-polyn-left))
+
+  ;; FINAL - these are our price values (y @ respective x granularity)
+  (map polyn-partial (take 10 xsequenceP))
+
+
+  ;; ==> sine
+  (def ein (randomize-vertical-dilation sine 0.5 2.7))
+  (def zwei (randomize-horizontal-dilation ein 0.3 2.7))
+  (def sine-partial (partial zwei 0))
+
+  (def xinterc-sine-left (find-xintercept - sine-xintercept))
+  (def xinterc-sine-right (find-xintercept + sine-xintercept))
+
+  (def granularityS (rand-double-in-range 0.1 1))
+  (def xsequenceS (iterate (partial + granularityS) xinterc-sine-left))
+
+  ;; FINAL
+  (map sine-partial (take 10 xsequenceS))
+
+
+  ;; FINAL
+  (def xsequenceO (four/generate-prices-without-population 5 15))
+
+  )
+
 
 ;; combination
 ;;   (phase begin / end)
 ;;   (beta curve) Sine + Polynomial + Stochastic Oscillating, distributed under a Beta Curve
-;; => beta distribution of a=2 b=4 x=0 (see: http://keisan.casio.com/exec/system/1180573226)
+;; => beta distribution of a=2 b=4.1 x=0 (see: http://keisan.casio.com/exec/system/1180573226)
 
+(defn test-beta [beta-distribution]
+  (let [sample-val (.sample beta-distribution)]
+    (cond
+     (< sample-val 0.33) :a
+     (< sample-val 0.66) :b
+     :else :c)))
+
+(defn generate-polynomial-sequence []
+
+  (def one (randomize-vertical-dilation polynomial 0.5 2))
+  (def two (randomize-horizontal-dilation one 0.5 2))
+  (def polyn-partial (partial two 3))
+
+  (def xinterc-polyn-left (find-xintercept - polynomial-xintercept))
+  (def xinterc-polyn-right (find-xintercept + polynomial-xintercept))
+
+
+  (def granularityP (rand-double-in-range 0.1 1))
+  (def xsequenceP (iterate (partial + granularityP) xinterc-polyn-left))
+
+  (map polyn-partial xsequenceP))
+
+(defn generate-sine-sequence []
+
+  (def ein (randomize-vertical-dilation sine 0.5 2.7))
+  (def zwei (randomize-horizontal-dilation ein 0.3 2.7))
+  (def sine-partial (partial zwei 0))
+
+  (def xinterc-sine-left (find-xintercept - sine-xintercept))
+  (def xinterc-sine-right (find-xintercept + sine-xintercept))
+
+  (def granularityS (rand-double-in-range 0.1 1))
+  (def xsequenceS (iterate (partial + granularityS) xinterc-sine-left))
+
+  (map sine-partial xsequenceS))
+
+(defn generate-oscillating-sequence []
+
+  (four/generate-prices-without-population 5 15))
+
+
+(defn generate-prices [beta-distribution]
+
+  ;; start-point
+  ;; move next sequence to endpoint of previous
+  ;; randomize length of each sample
+  (let [sample-val (.sample beta-distribution)]
+    (cond
+     (< sample-val 0.33) (generate-sine-sequence)
+     (< sample-val 0.66) (generate-polynomial-sequence)
+     :else (generate-oscillating-sequence))))
+
+
+(comment
+
+  ;; (def bdist1 (BetaDistribution. 2.0 5.0))
+  ;; (def bdist2 (BetaDistribution. 2.0 4.0))
+  ;; (def bdist3 (BetaDistribution. 2.0 3.0))
+  ;; (def bdist-even (BetaDistribution. 2.0 2.0))
+
+  (def bdist (BetaDistribution. 2.0 4.1))
+  (def result (repeatedly #(test-beta bdist)))
+  (sort (take 100 result))
+
+  )
 
 
 
 ;; Traversing Data
 ;; loop / recur (find-xintercept)
+
+;; http://christophermaier.name/blog/2011/07/07/writing-elegant-clojure-code-using-higher-order-functions
+;; partial, apply, comp, juxt
 
 ;; Branching and Conditional Dispatch
 ;;   case , cond , multi methods , pattern matching (core.match)
