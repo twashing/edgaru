@@ -238,16 +238,23 @@
   (four/generate-prices-without-population 5 15))
 
 
-(defn generate-prices [beta-distribution]
+(defn sample-prices [beta-distribution]
 
   ;; start-point
+  ;; [ok] have a sequence that iteratively calls the below sample `let`
   ;; move next sequence to endpoint of previous
-  ;; randomize length of each sample
-  (let [sample-val (.sample beta-distribution)]
+  ;; [ok] randomize length of each sample
+  (let [sample-val (.sample beta-distribution)
+        sample-length (rand-double-in-range 10 15)]
+
     (cond
-     (< sample-val 0.33) (generate-sine-sequence)
-     (< sample-val 0.66) (generate-polynomial-sequence)
-     :else (generate-oscillating-sequence))))
+     (< sample-val 0.33) (take sample-length (generate-sine-sequence))
+     (< sample-val 0.66) (take sample-length (generate-polynomial-sequence))
+     :else (take sample-length (generate-oscillating-sequence)))))
+
+(defn generate-prices [beta-distribution]
+
+  (apply concat (repeatedly #(sample-prices beta-distribution))))
 
 
 (comment
@@ -262,7 +269,6 @@
   (sort (take 100 result))
 
   )
-
 
 
 ;; Traversing Data
