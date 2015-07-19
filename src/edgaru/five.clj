@@ -1,6 +1,7 @@
 (ns edgaru.five
   (:require [edgaru.two :as two]
-            [edgaru.four :as four])
+            [edgaru.four :as four]
+            [clojure.math.numeric-tower :as math])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
 
@@ -36,7 +37,6 @@
 
 (defn sine-xintercept [x]
   (sine 2 2 0 x))
-
 
 
 ;; ==>
@@ -152,45 +152,6 @@
 ;;   polynomial:  between 0.1 - 1
 ;;   sine:  between 0.1 - 1
 
-(comment
-
-
-  ;; ==> polynomial
-  (def one (randomize-vertical-dilation polynomial 0.5 2))
-  (def two (randomize-horizontal-dilation one 0.5 2))
-  (def polyn-partial (partial two 3))
-
-  (def xinterc-polyn-left (find-xintercept - polynomial-xintercept))
-  (def xinterc-polyn-right (find-xintercept + polynomial-xintercept))
-
-
-  (def granularityP (rand-double-in-range 0.1 1))
-  (def xsequenceP (iterate (partial + granularityP) xinterc-polyn-left))
-
-  ;; FINAL - these are our price values (y @ respective x granularity)
-  (map polyn-partial (take 10 xsequenceP))
-
-
-  ;; ==> sine
-  (def ein (randomize-vertical-dilation sine 0.5 2.7))
-  (def zwei (randomize-horizontal-dilation ein 0.3 2.7))
-  (def sine-partial (partial zwei 0))
-
-  (def xinterc-sine-left (find-xintercept - sine-xintercept))
-  (def xinterc-sine-right (find-xintercept + sine-xintercept))
-
-  (def granularityS (rand-double-in-range 0.1 1))
-  (def xsequenceS (iterate (partial + granularityS) xinterc-sine-left))
-
-  ;; FINAL
-  (map sine-partial (take 10 xsequenceS))
-
-
-  ;; FINAL
-  (def xsequenceO (four/generate-prices-without-population 5 15))
-
-  )
-
 
 ;; combination
 ;;   (phase begin / end)
@@ -240,10 +201,13 @@
 
 (defn sample-prices [beta-distribution]
 
-  ;; start-point
   ;; [ok] have a sequence that iteratively calls the below sample `let`
-  ;; move next sequence to endpoint of previous
   ;; [ok] randomize length of each sample
+
+  ;; start-point
+  ;; move next sequence to endpoint of previous
+  ;; ... reduce / cat
+
   (let [sample-val (.sample beta-distribution)
         sample-length (rand-double-in-range 10 15)]
 
@@ -252,9 +216,24 @@
      (< sample-val 0.66) (take sample-length (generate-polynomial-sequence))
      :else (take sample-length (generate-oscillating-sequence)))))
 
+
 (defn generate-prices [beta-distribution]
 
-  (apply concat (repeatedly #(sample-prices beta-distribution))))
+  (reduce (fn [^clojure.lang.LazySeq rslt
+              ^clojure.lang.LazySeq each-sample-seq]
+
+            (let [beginning-price (if (empty? rslt)
+                                    (rand-double-in-range 5 15)
+                                    (last rslt))
+                  sample-seq-head (first each-sample-seq)
+                  price-difference (math/abs (- sample-seq-head beginning-price))]
+
+              ;; only raise the price if below the beginning price
+              (if (< sample-seq-head beginning-price)
+                (concat rslt (map #(+ % price-difference) each-sample-seq))
+                (concat rslt each-sample-seq))))
+          '()
+          (take 10 (repeatedly #(sample-prices beta-distribution)))))
 
 
 (comment
@@ -268,13 +247,15 @@
   (def result (repeatedly #(test-beta bdist)))
   (sort (take 100 result))
 
+  (take 5 (generate-prices bdist))
+
   )
 
 
 ;; Traversing Data
 ;; loop / recur (find-xintercept)
 
-;; http://christophermaier.name/blog/2011/07/07/writing-elegant-clojure-code-using-higher-order-functions
+;; First Order Functions. http://christophermaier.name/blog/2011/07/07/writing-elegant-clojure-code-using-higher-order-functions
 ;; partial, apply, comp, juxt
 
 ;; Branching and Conditional Dispatch
