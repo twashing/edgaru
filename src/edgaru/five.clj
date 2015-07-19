@@ -270,6 +270,29 @@
     (map first (iterate iterfn ['() sample-seq]))))
 
 
+(defn generate-prices-for [beta-distribution]
+
+  (def previous-price nil)
+
+  (let [adjusted-samples (for [each-sample-seq (repeatedly #(sample-prices beta-distribution))
+                                :let [beginning-price (if (nil? previous-price)
+                                                        (rand-double-in-range 5 15)
+                                                        previous-price)
+
+                                      sample-seq-head (first each-sample-seq)
+                                      price-difference (math/abs (- sample-seq-head beginning-price))
+
+                                      adjusted-sample (if (< sample-seq-head beginning-price)
+                                                        (map #(+ % price-difference) each-sample-seq)
+                                                        (map #(- % price-difference) each-sample-seq))
+
+                                      _ (alter-var-root #'previous-price (fn [x] (last adjusted-sample)))]]
+
+                           adjusted-sample)]
+
+    (apply concat adjusted-samples)))
+
+
 (comment
 
   ;; (def bdist1 (BetaDistribution. 2.0 5.0))
@@ -284,6 +307,7 @@
   (take 5 (generate-prices bdist))
 
   (take 20 (generate-prices-iterate bdist))
+  (take 2 (generate-prices-for bdist))
 
   )
 
