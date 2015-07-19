@@ -199,6 +199,16 @@
   (four/generate-prices-without-population 5 15))
 
 
+(defn sample-dispatcher [sample-type sample-length sample-fn]
+
+  (let [sample-seq (take sample-length (sample-fn))]
+
+    ;;(println (str "Generating [" sample-type "] sample / length[" sample-length "]"))
+    ;;(println sample-seq)
+    ;;(println)
+
+    sample-seq))
+
 (defn sample-prices [beta-distribution]
 
   ;; [ok] have a sequence that iteratively calls the below sample `let`
@@ -208,13 +218,12 @@
   ;; move next sequence to endpoint of previous
   ;; ... reduce / cat
 
-  (let [sample-val (.sample beta-distribution)
-        sample-length (rand-double-in-range 10 15)]
+  (let [sample-val (.sample beta-distribution)]
 
     (cond
-     (< sample-val 0.33) (take sample-length (generate-sine-sequence))
-     (< sample-val 0.66) (take sample-length (generate-polynomial-sequence))
-     :else (take sample-length (generate-oscillating-sequence)))))
+     (< sample-val 0.33) (sample-dispatcher :sine (rand-double-in-range 10 15) generate-sine-sequence)
+     (< sample-val 0.66) (sample-dispatcher :polynomial (rand-double-in-range 4 6) generate-polynomial-sequence)
+     :else               (sample-dispatcher :oscillating (rand-double-in-range 8 10) generate-oscillating-sequence))))
 
 
 (defn generate-prices [beta-distribution]
@@ -231,9 +240,34 @@
               ;; only raise the price if below the beginning price
               (if (< sample-seq-head beginning-price)
                 (concat rslt (map #(+ % price-difference) each-sample-seq))
-                (concat rslt each-sample-seq))))
+                (concat rslt (map #(- % price-difference) each-sample-seq) each-sample-seq))))
           '()
-          (take 10 (repeatedly #(sample-prices beta-distribution)))))
+          (repeatedly #(sample-prices beta-distribution))))
+
+
+(defn generate-prices-iterate [beta-distribution]
+
+  (let [sample-seq (repeatedly #(sample-prices beta-distribution))
+
+        iterfn (fn [[^clojure.lang.LazySeq rslt
+                    ^clojure.lang.LazySeq remaining-sample-seq]]
+
+                 (let [each-sample-seq (first remaining-sample-seq)
+                       beginning-price (if (empty? rslt)
+                                         (rand-double-in-range 5 15)
+                                         (last rslt))
+                       sample-seq-head (first each-sample-seq)
+                       price-difference (math/abs (- sample-seq-head beginning-price))]
+
+                   ;; only raise the price if below the beginning price
+                   (if (< sample-seq-head beginning-price)
+
+                     [(concat rslt (map #(+ % price-difference) each-sample-seq))
+                      (rest remaining-sample-seq)]
+                     [(concat rslt (map #(- % price-difference) each-sample-seq))
+                      (rest remaining-sample-seq)])))]
+
+    (map first (iterate iterfn ['() sample-seq]))))
 
 
 (comment
@@ -249,16 +283,23 @@
 
   (take 5 (generate-prices bdist))
 
+  (take 20 (generate-prices-iterate bdist))
+
   )
 
 
 ;; Traversing Data
 ;; loop / recur (find-xintercept)
 
+;; Branching and Conditional Dispatch
+;;   case , cond , multi methods , pattern matching (core.match)
+
 ;; First Order Functions. http://christophermaier.name/blog/2011/07/07/writing-elegant-clojure-code-using-higher-order-functions
 ;; partial, apply, comp, juxt
 
-;; Branching and Conditional Dispatch
-;;   case , cond , multi methods , pattern matching (core.match)
+;; [x] repeatedly -> reduce (not lazy)
+;; [ok] repeatedly -> iterate (lazy)
+;; Transducers ...
+
 ;; sorting, grouping, filtering, dequeing
 ;; Scalars: numbers & precision
