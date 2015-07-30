@@ -293,6 +293,28 @@
     (apply concat adjusted-samples)))
 
 
+(defn generate-prices-partition [beta-distribution]
+
+  (let [samples-sequence (repeatedly #(sample-prices beta-distribution))
+        partitioned-sequences (partition 2 1 samples-sequence)
+
+        mapping-fn (fn [[fst snd]]
+
+                     (let [beginning-price (last fst)
+                           sample-seq-head (first snd)
+                           price-difference (math/abs (- sample-seq-head beginning-price))]
+
+                       (if (< sample-seq-head beginning-price)
+                         (concat fst (map #(+ % price-difference) snd))
+                         (concat fst (map #(- % price-difference) snd)))))]
+
+    (apply concat (map mapping-fn partitioned-sequences))))
+
+
+(defmethod print-method clojure.lang.PersistentQueue
+  [q, w]
+  (print-method '<- w) (print-method (seq q) w) (print-method '-< w))
+
 (comment
 
   ;; (def bdist1 (BetaDistribution. 2.0 5.0))
@@ -308,6 +330,7 @@
 
   (take 20 (generate-prices-iterate bdist))
   (take 2 (generate-prices-for bdist))
+  (take 2 (generate-prices-partition bdist))
 
   )
 
