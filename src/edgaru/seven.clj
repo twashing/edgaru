@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.core.async :as async :refer [go go-loop chan close! <! >!]]
             [com.stuartsierra.component :as component]
+            [clj-time.format :as fmt]
             [edgaru.two :as two]
             [edgaru.four :as four]
             [edgaru.five :as five]))
@@ -39,9 +40,18 @@
 (defn receive-data! [channel]
 
   (go-loop [data (<! channel)]
-            (println data)
-            (if-not (nil? data)
-              (recur (<! channel)))))
+
+    (if-not (nil? data)
+      (do
+        (let [{ticks :ticks sma :sma ema :ema bol :bol} data
+              timestamp (-> ticks last :last-trade-time .toString)
+              generate-file-name-with-timestamp-fn (fn [fname] (str timestamp "-" fname))]
+
+          (write-data (generate-file-name-with-timestamp-fn "ticks.edn") ticks)
+          (write-data (generate-file-name-with-timestamp-fn "sma.edn") sma)
+          (write-data (generate-file-name-with-timestamp-fn "ema.edn") ema)
+          (write-data (generate-file-name-with-timestamp-fn "bol.edn") bol))
+        (recur (<! channel))))))
 
 (defrecord Timeseries []
   component/Lifecycle
