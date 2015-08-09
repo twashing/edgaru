@@ -226,7 +226,7 @@
      :else               (sample-dispatcher :oscillating (rand-double-in-range 8 10) generate-oscillating-sequence))))
 
 
-(defn generate-prices [beta-distribution]
+(defn generate-prices-orig [beta-distribution]
 
   (reduce (fn [^clojure.lang.LazySeq rslt
               ^clojure.lang.LazySeq each-sample-seq]
@@ -311,6 +311,15 @@
     (apply concat (map mapping-fn partitioned-sequences))))
 
 
+(defn generate-prices
+  ([] (generate-prices (BetaDistribution. 2.0 4.1)))
+  ([beta-distribution]
+
+   (map (fn [inp]
+          (if (neg? inp) (* -1 inp) inp))
+        (generate-prices-for beta-distribution))))
+
+
 (defmethod print-method clojure.lang.PersistentQueue
   [q, w]
   (print-method '<- w) (print-method (seq q) w) (print-method '-< w))
@@ -326,7 +335,7 @@
   (def result (repeatedly #(test-beta bdist)))
   (sort (take 100 result))
 
-  (take 5 (generate-prices bdist))
+  (take 5 (generate-prices-orig bdist))
 
   (take 20 (generate-prices-iterate bdist))
   (take 2 (generate-prices-for bdist))
