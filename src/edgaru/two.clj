@@ -1,7 +1,8 @@
 (ns edgaru.two
   (:require [taoensso.timbre :as timbre]
             [clj-time.core :as tc]
-            [clj-time.periodic :as tp]))
+            [clj-time.periodic :as tp]
+            [clj-time.coerce :as tco]))
 
 
 ;;
@@ -193,7 +194,7 @@
 
   ([pricelist datetime]
    (->> (map (fn [x y] [x y])
-             (map (fn [x] {:last-trade-time x}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
+             (map (fn [x] {:last-trade-time (tco/to-date x)}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
              (map (fn [x] {:last-trade-price x}) pricelist))
         (map (fn [x] (merge (first x) (second x)))))))
 

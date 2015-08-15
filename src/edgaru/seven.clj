@@ -5,7 +5,8 @@
             [clj-time.format :as fmt]
             [edgaru.two :as two]
             [edgaru.four :as four]
-            [edgaru.five :as five]))
+            [edgaru.five :as five])
+  (:import [java.text SimpleDateFormat]))
 
 
 (defn generate-file-name [fname]
@@ -15,8 +16,9 @@
   (let [full-path (generate-file-name fname)
         _ (io/make-parents full-path)]
 
-    (spit full-path (list (apply pr-str data))
-           :encoding "UTF-8")))
+    (binding [*print-length* nil]
+      (spit full-path (pr-str data)
+            :encoding "UTF-8"))))
 
 
 ;; =====
@@ -44,7 +46,8 @@
     (if-not (nil? data)
       (do
         (let [{ticks :ticks sma :sma ema :ema bol :bol} data
-              timestamp (-> ticks last :last-trade-time .toString)
+              dateformat (SimpleDateFormat. "MM-dd-yyy-hh:mm:ss")
+              timestamp (->> ticks last :last-trade-time (.format dateformat))
               generate-file-name-with-timestamp-fn (fn [fname] (str timestamp "-" fname))]
 
           (write-data (generate-file-name-with-timestamp-fn "ticks.edn") ticks)
