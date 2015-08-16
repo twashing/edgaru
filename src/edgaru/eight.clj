@@ -203,13 +203,13 @@
                                   [(find-lookup-fn (first x)) (second x)])
                                 constraint-pairs)
 
-        constraint-pairs-B (map (fn [x]
+        lookupfn-fns-A (map (fn [x]
                                   (fn [y]
                                     (lookupfn y ((first x) (second x)))))
-                                constraint-pairs-A)]
+                            constraint-pairs-A)]
 
     ;; apply all fns with args
-    (apply concat ((apply juxt constraint-pairs-B)
+    (apply concat ((apply juxt lookupfn-fns-A)
                    alist))))
 
 
@@ -241,3 +241,126 @@
   (lookup :source "data/"
           :time #inst "2015-08-15T17:18:51.352-00:00")
   )
+
+
+(defn generate-input-list [constraints]
+  (if (some #{:source} constraints)
+    (let [source-source (comp (partial filter #(= :source (first %1)))    ;; -> a bigger use of `comp` function
+                              (partial partition 2))
+          source-value (comp second source-source)
+          source-key (comp first source-source)]
+
+      (if (string? source-key)
+        (load-data-files (source-key constraints))
+        source-value))
+
+    (load-data-files "data/")))
+
+(defn generate-constraint-pairs [constraints]
+  (->> constraints
+       (partition 2)
+       (remove #(= :source (first %)))))
+
+(defn find-lookup-fn [inp]
+  (case inp
+    :time specific-time-pred
+    :time-after time-after-pred
+    :time-before time-before-pred
+    :price specific-price-pred
+    :price-abouve price-abouve-pred
+    :price-below price-below-pred))
+
+(defn lookup-refactored [& constraints]
+
+  ;; ensure constraints are in pairs -> Preconditions
+  {:pre [(even? (count constraints))]}
+
+  ;; map over pairs - find predicate fn based on keyword - partially apply fn with arg
+  (let [alist (generate-input-list constraints)
+        constraint-pairs (generate-constraint-pairs constraints)
+
+        constraint-pairs-A (map (fn [x]
+                                  [(find-lookup-fn (first x)) (second x)])
+                                constraint-pairs)
+
+        lookupfn-fns-A (map (fn [x]
+                                  (fn [y]
+                                    (lookupfn y ((first x) (second x)))))
+                            constraint-pairs-A)]
+
+    ;; apply all fns with args
+    (apply concat ((apply juxt lookupfn-fns-A)
+                   alist))))
+
+#_(defn lookup [& constraints]
+
+  ;; ensure constraints are in pairs -> Preconditions
+  {:pre [(even? (count constraints))]}
+
+  ;; map over pairs - find predicate fn based on keyword - partially apply fn with arg
+  (let [alist (if (some #{:source} constraints)
+
+                (let [source-source (comp (partial filter #(= :source (first %1)))    ;; -> a bigger use of `comp` function
+                                          (partial partition 2))
+                      source-value (comp second source-source)
+                      source-key (comp first source-source)]
+
+                  (if (string? source-key)
+                    (load-data-files (source-key constraints))
+                    source-value))
+
+                (load-data-files "data/"))
+
+        constraint-pairs (->> constraints
+                              (partition 2)
+                              (remove #(= :source (first %))))
+
+        find-lookup-fn (fn [inp]
+                         (case inp
+                           :time specific-time-pred
+                           :time-after time-after-pred
+                           :time-before time-before-pred
+                           :price specific-price-pred
+                           :price-abouve price-abouve-pred
+                           :price-below price-below-pred))
+
+        constraint-pairs-A (map (fn [x]
+                                  [(find-lookup-fn (first x)) (second x)])
+                                constraint-pairs)
+
+        lookupfn-fns-A (map (fn [x]
+                                  (fn [y]
+                                    (lookupfn y ((first x) (second x)))))
+                            constraint-pairs-A)
+
+        ;; apply all fns with args
+        rone (apply concat ((apply juxt lookupfn-fns-A)
+                            alist))
+
+
+        xxx (map (fn [x]
+                   ((first x) (second x)))
+                 constraint-pairs-A)
+
+
+        lookupfn
+        xxx
+        alist
+
+        yyy (map (fn [xfn]
+                   (lookupfn ) (xfn))
+                 alist)
+
+        ;; (f1 x) (f2 x)
+
+        _ (reduce (fn [rs efn]
+                    (and rs (lookup efn)))
+                  true
+                  xxx)
+
+
+        zzz (apply and yyy)
+
+        rtwo (filter zzz alist)]
+
+    rone))
