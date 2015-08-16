@@ -110,9 +110,7 @@
 ;;  lookup based on specific price
 ;;  lookup based on price range
 
-(comment
-
-  (defn lookupfn [flist pred-fn]
+(defn lookupfn [flist pred-fn]
 
     (flatten
      (map (fn [x]
@@ -121,6 +119,8 @@
               (filter pred-fn
                       inp-edn)))
           flist)))
+
+(comment
 
   (defn specific-time-pred [inst]   ;; -> functions returning functions
     #(= inst (:last-trade-time %)))
@@ -200,44 +200,44 @@
                            :price-below price-below-pred))
 
         constraint-pairs-A (map (fn [x]
-                                  (update x first #(find-lookup-fn (first %))))
+                                  [(find-lookup-fn (first x)) (second x)])
                                 constraint-pairs)
 
         constraint-pairs-B (map (fn [x]
                                   (fn [y]
-                                    ((first x) y (second x)))))
-
-        result ((apply juxt constraint-pairs-B) alist)]
+                                    (lookupfn y ((first x) (second x)))))
+                                constraint-pairs-A)]
 
     ;; apply all fns with args
+    (apply concat ((apply juxt constraint-pairs-B)
+                   alist))))
 
-    result))
 
-
+;; acts as an implicit "or"
 ;; later - negation
 
 (comment
 
   (def many-files (file-seq (io/file "data/")))
 
-  (lookup :time "2015-08-15T17:18:51.352-00:00")
-  (lookup :time-after "2015-08-15T17:18:00.000-00:00")
-  (lookup :time-before "2015-08-15T17:19:00.000-00:00")
-  (lookup :time-after "2015-08-15T17:18:00.000-00:00" :time-before "2015-08-15T17:19:00.000-00:00")
+  (lookup :time #inst "2015-08-15T17:18:51.352-00:00")
+  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00")
+  (lookup :time-before #inst "2015-08-15T17:19:00.000-00:00")
+  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00" :time-before #inst "2015-08-15T17:19:00.000-00:00")
 
   (lookup :price 4.028309189176084)
   (lookup :price-abouve 12)
   (lookup :price-below 12)
   (lookup :price-abouve 12 :price-below 20)
 
-  (lookup :time-after "2015-08-15T17:18:00.000-00:00"
-          :time-before "2015-08-15T17:19:00.000-00:00"
+  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00"
+          :time-before #inst "2015-08-15T17:19:00.000-00:00"
           :price-abouve 12
           :price-below 20)
 
   (lookup :source many-files
-          :time "2015-08-15T17:18:51.352-00:00")
+          :time #inst "2015-08-15T17:18:51.352-00:00")
 
   (lookup :source "data/"
-          :time "2015-08-15T17:18:51.352-00:00")
+          :time #inst "2015-08-15T17:18:51.352-00:00")
   )
