@@ -104,6 +104,10 @@
   )
 
 
+;;  lookup based on specific time
+;;  lookup based on time range
+;;  lookup based on specific price
+;;  lookup based on price range
 
 (comment
 
@@ -144,11 +148,26 @@
 
   )
 
-;;  lookup based on specific time
-;;  lookup based on time range
-;;  lookup based on specific price
-;;  lookup based on price range
-
 
 ;; 4. simple query language backed by macro
-;;   lookup system to be a logic language
+
+;;   ? lookup system to be a logic language
+
+;;   assume data/ directory
+
+(comment
+
+  (lookup :time "2015-08-15T17:18:51.352-00:00")
+  (lookup :time-after "2015-08-15T17:18:00.000-00:00")
+  (lookup :time-before "2015-08-15T17:19:00.000-00:00")
+  (lookup :time-after "2015-08-15T17:18:00.000-00:00" :time-before "2015-08-15T17:19:00.000-00:00")
+
+  (lookup :price 4.028309189176084)
+  (lookup :price-abouve 12)
+  (lookup :price-below 12)
+  (lookup :price-abouve 12 :price-below 20)
+
+  (lookup :time-after "2015-08-15T17:18:00.000-00:00"
+          :time-before "2015-08-15T17:19:00.000-00:00"
+          :price-abouve 12
+          :price-below 20))
