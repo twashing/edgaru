@@ -291,18 +291,7 @@
 
 ;; acts as an implicit "or"
 ;; later - negation
-
-(comment
-
-  lookupfn-fns-A (map (fn [x]
-                                  (fn [y]
-                                    (lookupfn y ((first x) (second x)))))
-                            constraint-pairs-A)
-
-        ;; apply all fns with args
-        rone (apply concat ((apply juxt lookupfn-fns-A)
-                            alist)))
-
+;; later - intermingle and / or
 
 (defn lookup-and [& constraints]
 
@@ -332,17 +321,117 @@
 
  (lookupfn alist xfn)))
 
-(comment
 
-  (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
-  ;; 424
+(comment
 
   (count (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
   ;; 2126
+
+  (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  ;; 424
 
   (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00"
                      :time-before #inst "2015-08-15T17:19:00.000-00:00"
                      :price-abouve 20))
   ;; 47
 
+  )
+
+
+(defn lookup-combined' [mode & constraints]
+
+  ;; ensure constraints are in pairs -> Preconditions
+  {:pre [(even? (count constraints))]}
+
+
+  ;; map over pairs - find predicate fn based on keyword - partially apply fn with arg
+  (let [alist (generate-input-list constraints)
+        constraint-pairs (generate-constraint-pairs constraints)
+
+        ;; OR
+        constraint-pairs-A (map (fn [x]
+                                  [(find-lookup-fn (first x)) (second x)])
+                                constraint-pairs)
+
+        lookupfn-fns-A (map (fn [x]
+                                  (fn [y]
+                                    (lookupfn y ((first x) (second x)))))
+                            constraint-pairs-A)
+
+        ;; AND
+        constraint-pairs-B (map (fn [x]
+                                  [(find-lookup-fn (first x)) (second x)])
+                                constraint-pairs)
+
+        constraint-predicates (map (fn [x]
+                                     ((first x) (second x)))
+                                   constraint-pairs-B)
+
+        xfn (fn [x]
+              (every? (fn [pfn]
+                        (pfn x))
+                      constraint-predicates))]
+
+    ;; OR
+    (apply concat ((apply juxt lookupfn-fns-A)
+                   alist))
+
+    ;; AND
+    (lookupfn alist xfn)))
+
+
+(defn apply-juxt-helper [lookupfn-fns]
+  (apply concat ((apply juxt lookupfn-fns)
+                 alist)))
+
+(defn choose-constraint [mode alist constraint-pairs]
+
+  (if (= :or mode)
+
+    `(->> (quote ~constraint-pairs)
+
+          (map (fn [x#]
+                 [(find-lookup-fn (first x#)) (second x#)]))
+
+          (map (fn [x#]
+                 (fn [y#]
+                   (lookupfn y# ((first x#) (second x#))))))
+
+          (apply-juxt-helper))
+
+    `(->> (quote ~constraint-pairs)
+
+          (map (fn [x#]
+                 [(find-lookup-fn (first x#)) (second x#)]))
+
+          (map (fn [x#]
+                 ((first x#) (second x#))))
+
+          (fn [x#]
+            (fn [y#]
+              (every? (fn [pfn#]
+                        (pfn# y#))
+                      x#)))
+
+          (lookupfn alist))))
+
+(defmacro lookup-combined [mode & constraints]
+
+  ;; ensure constraints are in pairs -> Preconditions
+  {:pre [(even? (count constraints))]}
+
+  ;; map over pairs - find predicate fn based on keyword - partially apply fn with arg
+  (let [alist (generate-input-list constraints)
+        constraint-pairs (generate-constraint-pairs constraints)]
+
+    (choose-constraint mode alist constraint-pairs)))
+
+
+(comment
+
+  (count (lookup-combined :or :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  ;; 2126
+
+  (count (lookup-combined :and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  ;; 1915
 )
