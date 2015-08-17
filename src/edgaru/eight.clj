@@ -167,7 +167,7 @@
 (defn load-data-files [fname]
   (filter #(.isFile %) (file-seq (io/file fname))))
 
-(defn lookup [& constraints]
+(defn lookup-or [& constraints]
 
   ;; ensure constraints are in pairs -> Preconditions
   {:pre [(even? (count constraints))]}
@@ -212,30 +212,31 @@
     (apply concat ((apply juxt lookupfn-fns-A)
                    alist))))
 
+;; first pass at a lookup function
 (comment
 
   (def many-files (file-seq (io/file "data/")))
 
-  (lookup :time #inst "2015-08-15T17:18:51.352-00:00")
-  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00")
-  (lookup :time-before #inst "2015-08-15T17:19:00.000-00:00")
-  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00" :time-before #inst "2015-08-15T17:19:00.000-00:00")
+  (lookup-or :time #inst "2015-08-15T17:18:51.352-00:00")
+  (lookup-or :time-after #inst "2015-08-15T17:18:00.000-00:00")
+  (lookup-or :time-before #inst "2015-08-15T17:19:00.000-00:00")
+  (lookup-or :time-after #inst "2015-08-15T17:18:00.000-00:00" :time-before #inst "2015-08-15T17:19:00.000-00:00")
 
-  (lookup :price 4.028309189176084)
-  (lookup :price-abouve 12)
-  (lookup :price-below 12)
-  (lookup :price-abouve 12 :price-below 20)
+  (lookup-or :price 4.028309189176084)
+  (lookup-or :price-abouve 12)
+  (lookup-or :price-below 12)
+  (lookup-or :price-abouve 12 :price-below 20)
 
-  (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00"
-          :time-before #inst "2015-08-15T17:19:00.000-00:00"
-          :price-abouve 12
-          :price-below 20)
+  (lookup-or :time-after #inst "2015-08-15T17:18:00.000-00:00"
+             :time-before #inst "2015-08-15T17:19:00.000-00:00"
+             :price-abouve 12
+             :price-below 20)
 
-  (lookup :source many-files
-          :time #inst "2015-08-15T17:18:51.352-00:00")
+  (lookup-or :source many-files
+             :time #inst "2015-08-15T17:18:51.352-00:00")
 
-  (lookup :source "data/"
-          :time #inst "2015-08-15T17:18:51.352-00:00")
+  (lookup-or :source "data/"
+             :time #inst "2015-08-15T17:18:51.352-00:00")
   )
 
 
@@ -266,6 +267,7 @@
     :price-abouve price-abouve-pred
     :price-below price-below-pred))
 
+;; refactor some code to clean up
 (defn lookup-refactored [& constraints]
 
   ;; ensure constraints are in pairs -> Preconditions
@@ -290,9 +292,7 @@
 
 
 ;; acts as an implicit "or"
-;; later - negation
-;; later - intermingle and / or
-
+;; a user would also want an AND
 (defn lookup-and [& constraints]
 
   ;; ensure constraints are in pairs -> Preconditions
@@ -324,7 +324,7 @@
 
 (comment
 
-  (count (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  (count (lookup-or :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
   ;; 2126
 
   (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
@@ -337,7 +337,7 @@
 
   )
 
-
+;; just an outline of the code an OR and AND function has to implement
 (defn lookup-combined' [mode & constraints]
 
   ;; ensure constraints are in pairs -> Preconditions
@@ -380,6 +380,7 @@
     (lookupfn alist xfn)))
 
 
+;; helper to help with the ->> thrush pattern
 (defn apply-juxt-helper [lookupfn-fns]
   (apply concat ((apply juxt lookupfn-fns)
                  alist)))
@@ -427,6 +428,7 @@
     (choose-constraint mode alist constraint-pairs)))
 
 
+;; finalized macro demonstrating code replacement
 (comment
 
   (count (lookup-combined :or :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
@@ -434,4 +436,31 @@
 
   (count (lookup-combined :and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
   ;; 1915
-)
+
+  )
+
+
+(defmacro lookup [query-params]
+
+  ;; ensure constraints are in pairs -> Preconditions
+  {:pre [(even? (count (rest query-params)))]}
+
+  ;; map over pairs - find predicate fn based on keyword - partially apply fn with arg
+  (let [mode (first query-params)
+        constraints (rest query-params)
+        alist (generate-input-list constraints)
+        constraint-pairs (generate-constraint-pairs constraints)]
+
+    (choose-constraint mode alist constraint-pairs)))
+
+
+;; a more data-oriented query syntax
+(comment
+
+  (count (lookup [:or :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20]))
+  ;; 2126
+
+  (count (lookup [:and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20]))
+  ;; 1915
+
+  )
