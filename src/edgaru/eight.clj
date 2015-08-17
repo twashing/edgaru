@@ -328,8 +328,21 @@
         xfn (fn [x]
               (every? (fn [pfn]
                         (pfn x))
-                      constraint-predicates))
+                      constraint-predicates))]
 
-        rtwo (lookupfn alist xfn)]
+ (lookupfn alist xfn)))
 
-    rtwo))
+(comment
+
+  (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  ;; 424
+
+  (count (lookup :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
+  ;; 2126
+
+  (count (lookup-and :time-after #inst "2015-08-15T17:18:00.000-00:00"
+                     :time-before #inst "2015-08-15T17:19:00.000-00:00"
+                     :price-abouve 20))
+  ;; 47
+
+)
