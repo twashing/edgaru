@@ -416,6 +416,7 @@
 
           (lookupfn alist))))
 
+
 (defmacro lookup-combined [mode & constraints]
 
   ;; ensure constraints are in pairs -> Preconditions
@@ -428,7 +429,7 @@
     (choose-constraint mode alist constraint-pairs)))
 
 
-;; finalized macro demonstrating code replacement
+;; finalized macro demonstrating code replacement -> show with macroexpand-1
 (comment
 
   (count (lookup-combined :or :time-after #inst "2015-08-15T17:18:00.000-00:00" :price-abouve 20))
