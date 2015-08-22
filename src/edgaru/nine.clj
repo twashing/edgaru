@@ -3,6 +3,7 @@
             [edgaru.four :as four]
             [edgaru.five :as five]))
 
+
 (defn join-averages
   "Create a list where i) tick-list ii) sma-list and iii) ema-list are overlaid."
 
@@ -88,6 +89,60 @@
              partitioned-join))))
 
 
+(defn relative-strength-index
+  "The Relative Strength Index (RSI) is a momentum oscillator that measures the speed and change of price movements. It oscillates between zero and 100.
+   If no 'tick-window' is given, it defaults to 14
+
+   ** This function assumes the latest tick is on the left**"
+  [tick-window tick-list]
+
+  (let [twindow (if tick-window tick-window 14)
+        window-list (partition twindow 1 tick-list)]
+
+    ;; run over the collection of populations
+    (reduce (fn [rslt ech]
+
+              ;; each item will be a population of tick-window (default of 14)
+              (let [pass-one (reduce (fn [rslt ech]
+
+                                       (let [fst (:last-trade-price (first ech))
+                                             snd (:last-trade-price (second ech))
+
+                                             up? (> fst snd)
+                                             down? (< fst snd)
+                                             sideways? (and (not up?) (not down?))]
+
+                                         (if (or up? down?)
+                                           (if up?
+                                             (conj rslt (assoc (first ech) :signal :up))
+                                             (conj rslt (assoc (first ech) :signal :down)))
+                                           (conj rslt (assoc (first ech) :signal :sideways)))))
+                                     []
+                                     (partition 2 1 (remove nil? ech)))
+
+
+                    up-list (:up (group-by :signal pass-one))
+                    down-list (:down (group-by :signal pass-one))
+
+                    avg-gains (/ (apply +
+                                        (map :last-trade-price up-list))
+                                 tick-window)
+                    avg-losses (/ (apply +
+                                         (map :last-trade-price down-list))
+                                  tick-window)
+
+                    rs (if-not (= 0 avg-losses)
+                         (/ avg-gains avg-losses)
+                         0)
+                    rsi (- 100 (/ 100 (+ 1 rs)))]
+
+                (conj rslt {:last-trade-time (:last-trade-time (first ech))
+                            :last-trade-price (:last-trade-price (first ech))
+                            :rs rs
+                            :rsi rsi})))
+            []
+            window-list)))
+
 (comment
 
   ;; 1.
@@ -105,5 +160,7 @@
   (join-averages 20 (take 100 time-series))
 
   (moving-averages-signals 20 (take 100 time-series))
+
+  (relative-strength-index 14 (take 100 time-series))
 
   )
