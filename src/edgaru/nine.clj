@@ -207,6 +207,7 @@
   ([tick-window tick-list]
    (let [sma-list (four/simple-moving-average nil tick-window tick-list)
          bband (four/bollinger-band tick-window tick-list sma-list)]
+
      (bollinger-band-signals tick-window tick-list sma-list bband)))
 
   ([tick-window tick-list sma-list bband]

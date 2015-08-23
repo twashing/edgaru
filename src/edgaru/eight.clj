@@ -120,9 +120,7 @@
                       inp-edn)))
           flist)))
 
-(comment
-
-  (defn specific-time-pred [inst]   ;; -> functions returning functions
+(defn specific-time-pred [inst]   ;; -> functions returning functions
     #(= inst (:last-trade-time %)))
 
   (defn time-after-pred [time]
@@ -148,7 +146,10 @@
     #(and (> (:last-trade-price %) lower)
           (< (:last-trade-price %) upper)))
 
-  (def alist (filter #(.isFile %) many-files))
+(def alist (filter #(.isFile %) many-files))
+
+
+(comment
 
 
   (lookupfn alist (specific-time-pred #inst "2015-08-15T17:18:51.352-00:00"))
