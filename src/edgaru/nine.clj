@@ -4,13 +4,120 @@
             [edgaru.five :as five]))
 
 
+(defn simple-moving-average
+  [options tick-window tick-list]
+
+  (let [start-index tick-window
+
+        {input-key :input
+         output-key :output
+         etal-keys :etal
+         :or {input-key :last-trade-price
+              output-key :last-trade-price-average
+              etal-keys [:last-trade-price :last-trade-time]}} options]
+
+    (map (fn [ech]
+
+           (let [tsum (reduce (fn [rr ee]
+                                (let [ltprice (:last-trade-price ee)]
+                                  (+ ltprice rr))) 0 ech)
+
+                 taverage (/ tsum (count ech))]
+
+             (merge
+              (zipmap etal-keys
+                      (map #(% (last ech)) etal-keys))
+              {output-key taverage
+               :population ech})))
+         (partition tick-window 1 tick-list))))
+
+
+(defn exponential-moving-average
+  ([options tick-window tick-list]
+   (exponential-moving-average options tick-window tick-list (simple-moving-average {} tick-window tick-list)))
+
+  ([options tick-window tick-list sma-list]
+
+   ;; 1. calculate 'k'
+   ;; k = 2 / N + 1
+   ;; N = number of days
+   (let [k (/ 2 (+ tick-window 1))
+
+         {input-key :input
+          output-key :output
+          etal-keys :etal
+          :or {input-key :last-trade-price
+               output-key :last-trade-price-exponential
+               etal-keys [:last-trade-price :last-trade-time]}} options]
+
+     ;; 2. get the simple-moving-average for a given tick - 1
+     (last (reductions (fn [rslt ech]
+
+                         ;; 3. calculate the EMA ( for the first tick, EMA(yesterday) = MA(yesterday) )
+                         (let [;; price(today)
+                               ltprice (input-key ech)
+
+                               ;; EMA(yesterday)
+                               ema-last (if (output-key (last rslt))
+                                          (output-key (last rslt))
+                                          (input-key ech))
+
+                               ;; ** EMA now = price(today) * k + EMA(yesterday) * (1 - k)
+                               ema-now (+ (* k ltprice)
+                                          (* ema-last (- 1 k)))]
+
+                           (lazy-cat rslt
+                                     [(merge
+                                       (zipmap etal-keys
+                                               (map #(% (last (:population ech))) etal-keys))
+                                       {output-key ema-now})])))
+                       '()
+                       sma-list)))))
+
+
+(defn bollinger-band
+  ([tick-window tick-list]
+   (bollinger-band tick-window tick-list (simple-moving-average nil tick-window tick-list)))
+
+  ([tick-window tick-list sma-list]
+
+   ;; At each step, the Standard Deviation will be: the square root of the variance (average of the squared differences from the Mean)
+   (map (fn [ech]
+
+          (let [;; get the Moving Average
+                ma (:last-trade-price-average ech)
+
+                ;; work out the mean
+                mean (/ (reduce (fn [rlt ech]
+                                  (+ (:last-trade-price ech)
+                                     rlt))
+                                0
+                                (:population ech))
+                        (count (:population ech)))
+
+                ;; Then for each number: subtract the mean and square the result (the squared difference)
+                sq-diff-list (map (fn [ech]
+                                    (let [diff (- mean (:last-trade-price ech))]
+                                      (* diff diff)))
+                                  (:population ech))
+
+                variance (/ (reduce + sq-diff-list) (count (:population ech)))
+                standard-deviation (. Math sqrt variance)]
+
+            {:last-trade-price (:last-trade-price ech)
+             :last-trade-time (:last-trade-time ech)
+             :upper-band (+ ma (* 2 standard-deviation))
+             :lower-band (- ma (* 2 standard-deviation))}))
+        sma-list)))
+
+
 (defn join-averages
   "Create a list where i) tick-list ii) sma-list and iii) ema-list are overlaid."
 
   ([tick-window tick-list]
 
-   (let [sma-list (four/simple-moving-average nil tick-window tick-list)
-         ema-list (four/exponential-moving-average nil tick-window tick-list sma-list)]
+   (let [sma-list (simple-moving-average nil tick-window tick-list)
+         ema-list (exponential-moving-average nil tick-window tick-list sma-list)]
      (join-averages tick-list sma-list ema-list)))
 
   ([tick-list sma-list ema-list]
@@ -19,10 +126,25 @@
                                             (:last-trade-time (first sma-list))))
                                    tick-list)]
 
+     (println (str "ticks > " (seq (take 2 trimmed-ticks))))
+     (println (str "sma > " (seq (map #(dissoc % :population) (take 2 sma)))))
+     (println (str "ema > " (seq (take 2 ema-list))))
+     (println (str "ticks > " (count trimmed-ticks)))
+     (println (str "sma > " (count sma-list)))
+     (println (str "ema > " (count ema-list)))
+
      (map (fn [titem sitem eitem]
 
             ;; 1. ensure that we have the :last-trade-time for simple and exponential items
             ;; 2. ensure that all 3 time items line up
+
+            ;; (println (str "1. " (and (not (nil? (:last-trade-time sitem))) (not (nil? (:last-trade-time eitem))))))
+            ;; (println (str "2. " (= (:last-trade-time titem) (:last-trade-time sitem) (:last-trade-time eitem))))
+
+            ;; (println (str "1. titem > " titem))
+            ;; (println (str "2. sitem > " sitem))
+            ;; (println (str "3. eitem > " (seq eitem)))
+
             (if (and (and (not (nil? (:last-trade-time sitem)))
                           (not (nil? (:last-trade-time eitem))))
                      (= (:last-trade-time titem) (:last-trade-time sitem) (:last-trade-time eitem)))
@@ -48,8 +170,8 @@
 
   ([tick-window tick-list]
 
-   (let [sma-list (four/simple-moving-average nil tick-window tick-list)
-         ema-list (four/exponential-moving-average nil tick-window tick-list sma-list)]
+   (let [sma-list (simple-moving-average nil tick-window tick-list)
+         ema-list (exponential-moving-average nil tick-window tick-list sma-list)]
      (moving-averages-signals tick-list sma-list ema-list)))
 
   ([tick-list sma-list ema-list]
@@ -58,35 +180,34 @@
    (let [joined-list (join-averages tick-list sma-list ema-list)
          partitioned-join (partition 2 1 (remove nil? joined-list))]
 
-
      ;; find time points where ema-list (or second list) crosses over the sma-list (or 1st list)
-     (reduce (fn [rslt ech]
+     (last (reductions (fn [rslt ech]
 
-               (let [fst (first ech)
-                     snd (second ech)
+                         (let [fst (first ech)
+                               snd (second ech)
 
-                     ;; in the first element, has the ema crossed abouve the sma from the second element
-                     signal-up (and (< (:last-trade-price-exponential snd) (:last-trade-price-average snd))
-                                    (> (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
+                               ;; in the first element, has the ema crossed abouve the sma from the second element
+                               signal-up (and (< (:last-trade-price-exponential snd) (:last-trade-price-average snd))
+                                              (> (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
 
-                     ;; in the first element, has the ema crossed below the sma from the second element
-                     signal-down (and (> (:last-trade-price-exponential snd) (:last-trade-price-average snd))
-                                      (< (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
+                               ;; in the first element, has the ema crossed below the sma from the second element
+                               signal-down (and (> (:last-trade-price-exponential snd) (:last-trade-price-average snd))
+                                                (< (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
 
-                     raw-data fst]
+                               raw-data fst]
 
-                 ;; return either i) :up signal, ii) :down signal or iii) nothing, with just the raw data
-                 (if signal-up
-                   (conj rslt (assoc raw-data :signals [{:signal :up
-                                                         :why :moving-average-crossover
-                                                         :arguments [fst snd]}]))
-                   (if signal-down
-                     (conj rslt (assoc raw-data :isgnals [{:signal :down
-                                                           :why :moving-average-crossover
-                                                           :arguments [fst snd]}]))
-                     (conj rslt raw-data)))))
-             []
-             partitioned-join))))
+                           ;; return either i) :up signal, ii) :down signal or iii) nothing, with just the raw data
+                           (if signal-up
+                             (conj rslt (assoc raw-data :signals [{:signal :up
+                                                                   :why :moving-average-crossover
+                                                                   :arguments [fst snd]}]))
+                             (if signal-down
+                               (conj rslt (assoc raw-data :signals [{:signal :down
+                                                                     :why :moving-average-crossover
+                                                                     :arguments [fst snd]}]))
+                               (conj rslt raw-data)))))
+                       []
+                       partitioned-join)))))
 
 
 (defn relative-strength-index
@@ -368,7 +489,12 @@
   (def ema (four/exponential-moving-average {} 20 prices sma))
   (def bol (four/bollinger-band 20 prices sma))
 
-  (join-averages 20 (take 100 time-series))
+  ;; 3.
+  (def sma1 (simple-moving-average {} 20 prices))
+  (def ema1 (exponential-moving-average {} 20 prices))
+  (def bol1 (bollinger-band 20 prices))
+
+  (count (join-averages 20 (take 100 time-series)))
 
   (moving-averages-signals 20 (take 100 time-series))
 
