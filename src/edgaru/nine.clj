@@ -181,33 +181,31 @@
          partitioned-join (partition 2 1 (remove nil? joined-list))]
 
      ;; find time points where ema-list (or second list) crosses over the sma-list (or 1st list)
-     (last (reductions (fn [rslt ech]
+     (map (fn [ech]
+            (let [fst (first ech)
+                  snd (second ech)
 
-                         (let [fst (first ech)
-                               snd (second ech)
+                  ;; in the first element, has the ema crossed abouve the sma from the second element
+                  signal-up (and (< (:last-trade-price-exponential snd) (:last-trade-price-average snd))
+                                 (> (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
 
-                               ;; in the first element, has the ema crossed abouve the sma from the second element
-                               signal-up (and (< (:last-trade-price-exponential snd) (:last-trade-price-average snd))
-                                              (> (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
+                  ;; in the first element, has the ema crossed below the sma from the second element
+                  signal-down (and (> (:last-trade-price-exponential snd) (:last-trade-price-average snd))
+                                   (< (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
 
-                               ;; in the first element, has the ema crossed below the sma from the second element
-                               signal-down (and (> (:last-trade-price-exponential snd) (:last-trade-price-average snd))
-                                                (< (:last-trade-price-exponential fst) (:last-trade-price-average fst)))
+                  raw-data fst]
 
-                               raw-data fst]
-
-                           ;; return either i) :up signal, ii) :down signal or iii) nothing, with just the raw data
-                           (if signal-up
-                             (conj rslt (assoc raw-data :signals [{:signal :up
-                                                                   :why :moving-average-crossover
-                                                                   :arguments [fst snd]}]))
-                             (if signal-down
-                               (conj rslt (assoc raw-data :signals [{:signal :down
-                                                                     :why :moving-average-crossover
-                                                                     :arguments [fst snd]}]))
-                               (conj rslt raw-data)))))
-                       []
-                       partitioned-join)))))
+              ;; return either i) :up signal, ii) :down signal or iii) nothing, with just the raw data
+              (if signal-up
+                (assoc raw-data :signals [{:signal :up
+                                           :why :moving-average-crossover
+                                           :arguments [fst snd]}])
+                (if signal-down
+                  (assoc raw-data :signals [{:signal :down
+                                             :why :moving-average-crossover
+                                             :arguments [fst snd]}])
+                  raw-data))))
+          partitioned-join))))
 
 
 (defn relative-strength-index
