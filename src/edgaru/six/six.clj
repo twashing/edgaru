@@ -1,4 +1,4 @@
-(ns edgaru.six)
+(ns edgaru.six.six)
 
 
 (let [a (float 0.1)
@@ -20,7 +20,7 @@
           (if (< rslt 20)
             (+ rslt ech)
             (reduced :break)))
-        a)
+        [1 2 3 4 5 6 7 :break 8 9 10])
 
 (defn update-map [m f]
   (reduce-kv (fn [m k v]
