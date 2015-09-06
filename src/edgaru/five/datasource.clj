@@ -1,6 +1,6 @@
-(ns edgaru.five
-  (:require [edgaru.two :as two]
-            [edgaru.four :as four]
+(ns edgaru.five.datasource
+  (:require [edgaru.five.core :as core]
+            [edgaru.five.analytics :as analytics]
             [clojure.math.numeric-tower :as math])
   (:import [org.apache.commons.math3.distribution BetaDistribution]))
 
@@ -196,7 +196,7 @@
 
 (defn generate-oscillating-sequence []
 
-  (four/generate-prices-without-population 5 15))
+  (analytics/generate-prices-without-population 5 15))
 
 
 (defn sample-dispatcher [sample-type sample-length sample-fn]
