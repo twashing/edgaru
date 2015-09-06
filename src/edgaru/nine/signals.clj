@@ -1,7 +1,7 @@
-(ns edgaru.nine
-  (:require [edgaru.two :as two]
-            [edgaru.four :as four]
-            [edgaru.five :as five]))
+(ns edgaru.nine.signals
+  (:require [edgaru.nine.core :as core]
+            [edgaru.nine.analytics :as analytics]
+            [edgaru.nine.datasource :as datasource]))
 
 
 (defn simple-moving-average
@@ -470,16 +470,16 @@
 (comment
 
   ;; 1.
-  (def price-list (five/generate-prices))
-  (def time-series (two/generate-timeseries price-list))
+  (def price-list (datasource/generate-prices))
+  (def time-series (core/generate-timeseries price-list))
 
   (def prices (take 320 time-series))
   (def remaining (drop 320 time-series))
 
   ;; 2.
-  (def sma (four/simple-moving-average {} 20 prices))
-  (def ema (four/exponential-moving-average {} 20 prices sma))
-  (def bol (four/bollinger-band 20 prices sma))
+  (def sma (analytics/simple-moving-average {} 20 prices))
+  (def ema (analytics/exponential-moving-average {} 20 prices sma))
+  (def bol (analytics/bollinger-band 20 prices sma))
 
   ;; 3.
   (def sma1 (simple-moving-average {} 20 prices))
