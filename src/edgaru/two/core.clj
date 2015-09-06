@@ -216,7 +216,7 @@
 
 
   ;; generate a timeseries based on thoe numbers
-  (def timeseries (take 10 (generate-timeseries pricelist)))
+  (def timeseries (take 40 (generate-timeseries pricelist)))
 
 
   ;; execute a side-effecting function over the time series

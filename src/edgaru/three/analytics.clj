@@ -1,4 +1,4 @@
-(ns edgaru.three
+(ns edgaru.three.analytics
   (:require [edgaru.three.core :as core]))
 
 
@@ -42,15 +42,11 @@
    Options are:
    :input - input key function will look for (defaults to :last-trade-price)
    :output - output key function will emit (defaults to :last-trade-price-average)
-   :etal - other keys to emit in each result map
-   ** This function assumes the latest tick is on the left**"
+   :etal - other keys to emit in each result map"
   [options tick-window tick-list]
 
   (let [;; calculate how far back the window can start
         start-index tick-window
-
-        ;; back fill slots with nils, into an accompanying moving-average list
-        ma-list (into '() (repeat tick-window nil))
 
         {input-key :input
          output-key :output
@@ -72,7 +68,8 @@
                     ;; get the average
                     taverage (/ tsum (count ech))]
 
-                (cons (merge
+                (conj rslt
+                      (merge
 
                        ;; will produce a map of etal-keys, with associated values in ech
                        (zipmap etal-keys
@@ -80,16 +77,15 @@
 
                        ;; and merge the output key to the map
                        {output-key taverage
-                        :population ech})
-                      rslt)))
+                        :population ech}))))
 
-            ma-list  ;; begin with a reversed tick-list, over which we can iterate
-            (reverse (partition tick-window 1 tick-list)))))
+            []
+            (partition tick-window 1 tick-list))))
 
 ;;
 (comment
 
-  (def sma-list (take 2 (simple-moving-average {} 20 timeseries)))
+  (def sma-list (simple-moving-average {} 20 (take 40 timeseries)))
 
   (def one (reduce (fn [rslt ech]
 
