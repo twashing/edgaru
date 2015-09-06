@@ -1,6 +1,5 @@
-(ns edgaru.two
-  (:require [taoensso.timbre :as timbre]
-            [clj-time.core :as tc]
+(ns edgaru.two.core
+  (:require [clj-time.core :as tc]
             [clj-time.periodic :as tp]
             [clj-time.coerce :as tco]))
 
@@ -45,8 +44,8 @@
 
 
 ;;
-(require '[edgaru.two :as t])
-;; (require (quote [edgaru.two :as t]))
+(require '[edgaru.two.core :as t])
+;; (require (quote [edgaru.two.core :as t]))
 '(a b c)
 
 
@@ -110,7 +109,7 @@
 
 
 ;;
-(ns edgaru.two)
+(ns edgaru.two.core)
 
 (defn generate-prices [lower-bound upper-bound]
   (filter (fn [x] (>= x lower-bound))
@@ -125,7 +124,7 @@
 
 
 ;;
-(require '[edgaru.two :as t])
+(require '[edgaru.two.core :as t])
 (def pricelist (t/generate-prices 12 35))  ;; pricelist looks something like ((15.400851964198912 23.20772287178392 ...)
 (t/generate-timeseries pricelist)  ;; yields (({:price 15.400851964198912, :time 0} {:price 23.20772287178392, :time 1} ...)
 
@@ -210,9 +209,6 @@
 
 
 (comment
-
-
-  (timbre/set-level! :debug)
 
 
   ;; generate a raw infinite list of floats within a given range
