@@ -1,6 +1,5 @@
 (ns edgaru.three
-  (:require [taoensso.timbre :as timbre]
-            [edgaru.two :as t]))
+  (:require [edgaru.three.core :as core]))
 
 
 ;;
@@ -17,8 +16,8 @@
 
 
 ;;
-(def pricelist (t/generate-prices 5 15))
-(def timeseries (t/generate-timeseries pricelist))
+(def pricelist (core/generate-prices 5 15))
+(def timeseries (core/generate-timeseries pricelist))
 (def movingaverage (moving-average timeseries 20))
 (take 2 movingaverage)
 
