@@ -1,6 +1,4 @@
-(ns edgaru.one
-  (:require [alembic.still]
-            [taoensso.timbre :as timbre]))
+(ns edgaru.one.core)
 
 
 (+ 9 5)  ;; 14
@@ -39,7 +37,7 @@
 hello  ;; "world"
 
 
-:hello  # :hello
+:hello  ;; :hello
 (:foo {:foo "bar" :hello "world"})  ;; "bar"
 
 
