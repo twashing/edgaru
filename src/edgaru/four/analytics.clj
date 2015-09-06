@@ -1,11 +1,10 @@
-(ns edgaru.four
-  (:require [edgaru.two :as two]
-            [edgaru.three :as three]))
+(ns edgaru.four.analytics
+  (:require [edgaru.four.core :as core]))
 
 
 ;; Refactor price-list
 (declare timeseries)
-(def price-list (two/generate-prices 5 15))
+(def price-list (core/generate-prices 5 15))
 '({:last 10.978625695681702, :lows [5], :highs [15]}
   {:last 15.393542022616002,
    :lows (5 5),
@@ -29,16 +28,16 @@
   (map :last price-list))
 
 (defn generate-prices-without-population [beginning-low beginning-high]
-  (extract-price-only (two/generate-prices beginning-low beginning-high)) )
+  (extract-price-only (core/generate-prices beginning-low beginning-high)) )
 
-(def price-only-list (extract-price-only (two/generate-prices 5 15)))
+(def price-only-list (extract-price-only (core/generate-prices 5 15)))
 '(10.978625695681702
   15.393542022616002
   15.68497326182313
   17.894866781714637
   19.178454686228328)
 
-(def time-series (two/generate-timeseries price-only-list))
+(def time-series (core/generate-timeseries price-only-list))
 
 '({:last-trade-price 10.774174002394385,
    :last-trade-time #inst "2015-06-27T17:54:37.583Z"}
@@ -152,7 +151,7 @@
    ** This function assumes the latest tick is on the left**"
 
   ([options tick-window tick-list]
-   (exponential-moving-average options tick-window tick-list (three/simple-moving-average {} tick-window tick-list)))
+   (exponential-moving-average options tick-window tick-list (simple-moving-average {} tick-window tick-list)))
 
   ([options tick-window tick-list sma-list]
 
@@ -204,7 +203,7 @@
   ** This function assumes the latest tick is on the left**"
 
   ([tick-window tick-list]
-   (bollinger-band tick-window tick-list (three/simple-moving-average nil tick-window tick-list)))
+   (bollinger-band tick-window tick-list (simple-moving-average nil tick-window tick-list)))
 
   ([tick-window tick-list sma-list]
 
@@ -242,8 +241,8 @@
 
 (comment
 
-  (def price-only-list (extract-price-only (two/generate-prices 5 15)))
-  (def time-series (two/generate-timeseries price-only-list))
+  (def price-only-list (extract-price-only (core/generate-prices 5 15)))
+  (def time-series (core/generate-timeseries price-only-list))
 
   (def sma-list (simple-moving-average {} 20 time-series))
   (def ema-list (exponential-moving-average {} 20 time-series sma-list))
