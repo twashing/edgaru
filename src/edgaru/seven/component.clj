@@ -3,9 +3,9 @@
             [clojure.core.async :as async :refer [go go-loop chan close! <! >!]]
             [com.stuartsierra.component :as component]
             [clj-time.format :as fmt]
-            [edgaru.two :as two]
-            [edgaru.four :as four]
-            [edgaru.five :as five])
+            [edgaru.seven.core :as core]
+            [edgaru.seven.analytics :as analytics]
+            [edgaru.seven.datasource :as datasource])
   (:import [java.text SimpleDateFormat]))
 
 
@@ -29,9 +29,9 @@
   (go-loop [prices (take 320 time-series)
             remaining (drop 320 time-series)]
 
-    (let [sma (four/simple-moving-average {} 20 prices)
-          ema (four/exponential-moving-average {} 20 prices sma)
-          bol (four/bollinger-band 20 prices sma)]
+    (let [sma (analytics/simple-moving-average {} 20 prices)
+          ema (analytics/exponential-moving-average {} 20 prices sma)
+          bol (analytics/bollinger-band 20 prices sma)]
 
       (>! channel {:ticks prices :sma sma :ema ema :bol bol})
       (Thread/sleep 1000))
@@ -61,8 +61,8 @@
 
   (start [component]
     (let [c (chan)
-          price-list (five/generate-prices)
-          time-series (two/generate-timeseries price-list)]
+          price-list (datasource/generate-prices)
+          time-series (core/generate-timeseries price-list)]
 
       (send-data! c time-series)
       (assoc component :channel c)))
@@ -104,12 +104,12 @@
 (def system (build-system))
 
 
-;; 1. call five/generate-prices (pull 320)
+;; 1. call datasource/generate-prices (pull 320)
 
 ;; 2. call
-;;   four/simple-moving-average
-;;   four/exponential-moving-average
-;;   four/bollinger-band
+;;   analytics/simple-moving-average
+;;   analytics/exponential-moving-average
+;;   analytics/bollinger-band
 
 ;; 3. save all batches to file (latest time increment .edn)
 
@@ -132,16 +132,16 @@
 
 
   ;; 1.
-  (def price-list (five/generate-prices))
-  (def time-series (two/generate-timeseries price-list))
+  (def price-list (datasource/generate-prices))
+  (def time-series (core/generate-timeseries price-list))
 
   (def prices (take 320 time-series))
   (def remaining (drop 320 time-series))
 
   ;; 2.
-  (def sma (four/simple-moving-average {} 20 prices))
-  (def ema (four/exponential-moving-average {} 20 prices sma))
-  (def bol (four/bollinger-band 20 prices sma))
+  (def sma (analytics/simple-moving-average {} 20 prices))
+  (def ema (analytics/exponential-moving-average {} 20 prices sma))
+  (def bol (analytics/bollinger-band 20 prices sma))
 
   ;; 3.
   (write-data "ticks.edn" prices)
