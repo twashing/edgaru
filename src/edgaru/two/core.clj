@@ -138,52 +138,50 @@
     (if (> r upper)
       upper r)))
 
+
 (defn stochastic-k [last-price low-price high-price]
-  (let [hlrange (- high-price low-price)
+  (let [hlrange (- high-price (if (> low-price 0)
+                                low-price
+                                0))
         hlmidpoint (/ hlrange 2)
         numerator (if (> last-price hlmidpoint)
                     (- last-price hlmidpoint)
                     (- hlmidpoint low-price))]
     (/ numerator hlrange)))
 
+
 (defn break-local-minima-maxima [k]
   (as-> k k
-        (if (<= (int (+ 0.95 k)) 0)
+        (if (<= k 0.05)
           (+ 0.15 k) k)
-        (if (>= k 1)
-          (- k 0.15) k)))
+        (if (>= k 0.2)
+          0.2 k)))
+
 
 (defn generate-prices
 
   ([low high]
-   (generate-prices (random-in-range low high) low high))
+   (generate-prices (random-in-range low high)))
 
-  ([last-price low high]
-   (iterate (fn [{:keys [last lows highs]}]
+  ([last-price]
+   (iterate (fn [{:keys [last]}]
 
-              (let [low (-> lows first)
-                    high (-> highs reverse first)
+              (let [low (- last 5)
+                    high (+ last 5)
                     k (stochastic-k last low high)
                     plus-OR-minus (rand-nth [- +])
 
-                    kPM (if (< k 0.5)
-                          (if (= plus-OR-minus +)
-                            (+ 1 (break-local-minima-maxima k))
-                            (- 1 (break-local-minima-maxima k)))
-                          (if (= plus-OR-minus +)
-                            (+ 1 (- 1 (break-local-minima-maxima k)))
-                            (- 1 (- 1 (break-local-minima-maxima k)))))
+                    kPM (if (= plus-OR-minus +)
+                          (+ 1 (break-local-minima-maxima k))
+                          (- 1 (break-local-minima-maxima k)))
 
                     newprice (* kPM last)
                     newlow (if (< newprice low) newprice low)
                     newhigh (if (> newprice high) newprice high)]
 
-                ;;(println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
-                {:last newprice
-                 :lows (take 5 (conj lows newlow))
-                 :highs (take 5 (conj highs newhigh))}))
-
-            {:last last-price :lows [low] :highs [high]})))
+                ;; (println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
+                {:last newprice}))
+            {:last last-price})))
 
 
 (defn generate-timeseries

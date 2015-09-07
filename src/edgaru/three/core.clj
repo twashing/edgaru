@@ -22,12 +22,14 @@
                     (- hlmidpoint low-price))]
     (/ numerator hlrange)))
 
+
 (defn break-local-minima-maxima [k]
   (as-> k k
         (if (<= k 0.05)
           (+ 0.15 k) k)
         (if (>= k 0.2)
           0.2 k)))
+
 
 (defn generate-prices
 
@@ -50,7 +52,7 @@
                     newlow (if (< newprice low) newprice low)
                     newhigh (if (> newprice high) newprice high)]
 
-                (println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
+                ;; (println (str "[" last " | " low " | " high "] <=> k[" k "] / kPM[" kPM "] / newprice[" newprice "]"))
                 {:last newprice}))
             {:last last-price})))
 

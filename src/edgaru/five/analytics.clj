@@ -5,24 +5,11 @@
 ;; Refactor price-list
 (declare timeseries)
 (def price-list (core/generate-prices 5 15))
-'({:last 10.978625695681702, :lows [5], :highs [15]}
-  {:last 15.393542022616002,
-   :lows (5 5),
-   :highs (15 15.393542022616002)}
-  {:last 15.68497326182313,
-   :lows (5 5 5),
-   :highs (15.68497326182313 15 15.393542022616002)}
-  {:last 17.894866781714637,
-   :lows (5 5 5 5),
-   :highs (17.894866781714637 15.68497326182313 15 15.393542022616002)}
-  {:last 19.178454686228328,
-   :lows (5 5 5 5 5),
-   :highs
-   (19.178454686228328
-    17.894866781714637
-    15.68497326182313
-    15
-    15.393542022616002)})
+'({:last 13.467930225619813}
+  {:last 10.774344180495852}
+  {:last 12.929213016595023}
+  {:last 15.515055619914026}
+  {:last 18.61806674389683})
 
 (defn extract-price-only [price-list]
   (map :last price-list))
@@ -31,24 +18,24 @@
   (extract-price-only (core/generate-prices beginning-low beginning-high)) )
 
 (def price-only-list (extract-price-only (core/generate-prices 5 15)))
-'(10.978625695681702
-  15.393542022616002
-  15.68497326182313
-  17.894866781714637
-  19.178454686228328)
+'(8.121011385878484
+  6.496809108702788
+  7.469257413843746
+  5.975405931074997
+  5.39256129249987)
+
 
 (def time-series (core/generate-timeseries price-only-list))
-
-'({:last-trade-price 10.774174002394385,
-   :last-trade-time #inst "2015-06-27T17:54:37.583Z"}
-  {:last-trade-price 6.221195542189912,
-   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
-  {:last-trade-price 6.98092516851132,
-   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
-  {:last-trade-price 5.5980561319315,
-   :last-trade-time #inst "2015-06-27T17:54:40.583Z"}
-  {:last-trade-price 5.263260952271663,
-   :last-trade-time #inst "2015-06-27T17:54:42.583Z"})
+'({:last-trade-time #inst "2015-09-06T23:54:19.562-00:00",
+   :last-trade-price 8.121011385878484}
+  {:last-trade-time #inst "2015-09-06T23:54:20.562-00:00",
+   :last-trade-price 6.496809108702788}
+  {:last-trade-time #inst "2015-09-06T23:54:23.562-00:00",
+   :last-trade-price 7.469257413843746}
+  {:last-trade-time #inst "2015-09-06T23:54:26.562-00:00",
+   :last-trade-price 5.975405931074997}
+  {:last-trade-time #inst "2015-09-06T23:54:27.562-00:00",
+   :last-trade-price 5.39256129249987})
 
 
 ;; Destructuring
@@ -83,32 +70,33 @@
 ;; Refactor simple-moving-average
 (partition 20 1 (range 40))
 '((0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19)
- (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
- (2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21)
- (3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22)
- (4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23)
- (5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24)
- (6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25)
- (7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26)
- (8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27)
- (9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28)
- (10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)
- (11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30)
- (12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31)
- (13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32)
- (14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33)
- (15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34)
- (16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35)
- (17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36)
- (18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37)
- (19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38)
- (20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39))
+  (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20)
+  (2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21)
+  (3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22)
+  (4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23)
+  (5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24)
+  (6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25)
+  (7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26)
+  (8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27)
+  (9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28)
+  (10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29)
+  (11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30)
+  (12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31)
+  (13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32)
+  (14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33)
+  (15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34)
+  (16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35)
+  (17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36)
+  (18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37)
+  (19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38)
+  (20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39))
 
 
 (defn simple-moving-average
   [options tick-window tick-list]
 
-  (let [start-index tick-window
+  (let [;; calculate how far back the window can start
+        start-index tick-window
 
         {input-key :input
          output-key :output
@@ -117,24 +105,31 @@
               output-key :last-trade-price-average
               etal-keys [:last-trade-price :last-trade-time]}} options]
 
+    ;; calculate Simple Moving Average for each slot there's a window
     (reduce (fn [rslt ech]
 
-              (let [tsum (reduce (fn [rr ee]
-                                   (let [ltprice (:last-trade-price ee)]
-                                     (+ ltprice rr))) 0 ech)
+              (let [tsum (reduce (fn [rslt inp]
+                                   (let [ltprice (input-key inp)]
 
+                                     ;; sum it up
+                                     (+ ltprice rslt))) 0 ech)
+
+                    ;; get the average
                     taverage (/ tsum (count ech))]
 
-                (lazy-cat rslt
-                          [(merge
-                             (zipmap etal-keys
-                                     (map #(% (last ech)) etal-keys))
-                             {output-key taverage
-                              :population ech})])))
-            '()
-            (partition tick-window
-                       1
-                       (take (* 2 tick-window) tick-list)))))
+                (conj rslt
+                      (merge
+
+                       ;; will produce a map of etal-keys, with associated values in ech
+                       (zipmap etal-keys
+                               (map #(% (first ech)) etal-keys))
+
+                       ;; and merge the output key to the map
+                       {output-key taverage
+                        :population ech}))))
+
+            []
+            (partition tick-window 1 tick-list))))
 
 
 (defn exponential-moving-average
@@ -244,8 +239,8 @@
   (def price-only-list (extract-price-only (core/generate-prices 5 15)))
   (def time-series (core/generate-timeseries price-only-list))
 
-  (def sma-list (simple-moving-average {} 20 time-series))
-  (def ema-list (exponential-moving-average {} 20 time-series sma-list))
-  (def bol-band (bollinger-band 20 time-series sma-list))
+  (def sma-list (simple-moving-average {} 20 (take 40 time-series)))
+  (def ema-list (exponential-moving-average {} 20 (take 40 time-series)))
+  (def bol-band (bollinger-band 20 (take 40 time-series)))
 
   )
