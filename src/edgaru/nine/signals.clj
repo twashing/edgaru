@@ -477,14 +477,9 @@
   (def remaining (drop 320 time-series))
 
   ;; 2.
-  (def sma (analytics/simple-moving-average {} 20 prices))
-  (def ema (analytics/exponential-moving-average {} 20 prices sma))
-  (def bol (analytics/bollinger-band 20 prices sma))
-
-  ;; 3.
-  (def sma1 (simple-moving-average {} 20 prices))
-  (def ema1 (exponential-moving-average {} 20 prices))
-  (def bol1 (bollinger-band 20 prices))
+  (def sma (simple-moving-average {} 20 prices))
+  (def ema (exponential-moving-average {} 20 prices))
+  (def bol (bollinger-band 20 prices))
 
   (count (join-averages 20 (take 100 time-series)))
 

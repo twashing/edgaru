@@ -311,13 +311,34 @@
     (apply concat (map mapping-fn partitioned-sequences))))
 
 
+(defn generate-prices-reductions [beta-distribution]
+
+  (reductions (fn [^clojure.lang.LazySeq rslt
+                  ^clojure.lang.LazySeq each-sample-seq]
+
+                (let [beginning-price (if (empty? rslt)
+                                        (rand-double-in-range 5 15)
+                                        (last rslt))
+                      sample-seq-head (first each-sample-seq)
+                      price-difference (math/abs (- sample-seq-head beginning-price))]
+
+                  ;; only raise the price if below the beginning price
+                  (if (< sample-seq-head beginning-price)
+                    (concat rslt (map #(+ % price-difference) each-sample-seq))
+                    (concat rslt (map #(- % price-difference) each-sample-seq) each-sample-seq))))
+              '()
+              (repeatedly #(sample-prices beta-distribution))))
+
+
 (defn generate-prices
   ([] (generate-prices (BetaDistribution. 2.0 4.1)))
   ([beta-distribution]
 
    (map (fn [inp]
-          (if (neg? inp) (* -1 inp) inp))
-        (generate-prices-for beta-distribution))))
+          (if (neg? inp)
+            (* -1 inp)
+            inp))
+        (generate-prices-reductions beta-distribution))))
 
 
 (defmethod print-method clojure.lang.PersistentQueue
@@ -340,6 +361,8 @@
   (take 20 (generate-prices-iterate bdist))
   (take 2 (generate-prices-for bdist))
   (take 2 (generate-prices-partition bdist))
+
+  (last (take 20 (generate-prices-reductions bdist)))
 
   )
 
