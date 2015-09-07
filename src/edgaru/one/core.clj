@@ -1,6 +1,12 @@
 (ns edgaru.one.core)
 
 
+nil  ;; nil
+(type nil)  ;; nil
+
+true  ;; true
+(type false)  ;; java.lang.Boolean
+
 (+ 9 5)  ;; 14
 (- 400 18.75)  ;; 381.25
 (* 6 10)  ;; 60

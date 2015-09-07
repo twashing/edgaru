@@ -334,11 +334,7 @@
   ([] (generate-prices (BetaDistribution. 2.0 4.1)))
   ([beta-distribution]
 
-   (map (fn [inp]
-          (if (neg? inp)
-            (* -1 inp)
-            inp))
-        (generate-prices-reductions beta-distribution))))
+   (generate-prices-reductions beta-distribution)))
 
 
 (defmethod print-method clojure.lang.PersistentQueue
@@ -363,6 +359,8 @@
   (take 2 (generate-prices-partition bdist))
 
   (last (take 20 (generate-prices-reductions bdist)))
+
+  (last (take 10 (generate-prices bdist)))
 
   )
 

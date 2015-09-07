@@ -470,7 +470,7 @@
 (comment
 
   ;; 1.
-  (def price-list (datasource/generate-prices))
+  (def price-list (last (datasource/generate-prices)))
   (def time-series (core/generate-timeseries price-list))
 
   (def prices (take 320 time-series))
