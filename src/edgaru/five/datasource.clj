@@ -335,8 +335,10 @@
   ([beta-distribution]
 
    (map (fn [inp]
-          (if (neg? inp) (* -1 inp) inp))
-        (generate-prices-for beta-distribution))))
+          (if (neg? inp)
+            (* -1 inp)
+            inp))
+        (generate-prices-reductions beta-distribution))))
 
 
 (defmethod print-method clojure.lang.PersistentQueue
