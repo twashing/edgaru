@@ -123,6 +123,13 @@
        (map (fn [x] (merge (first x) (second x))))))
 
 
+(defn generate-timeseries [pricelist]
+  (map (fn [x y]
+         {:time x :price y})
+       (iterate inc 0)
+       pricelist))
+
+
 ;;
 (require '[edgaru.two.core :as t])
 (def pricelist (t/generate-prices 12 35))  ;; pricelist looks something like ((15.400851964198912 23.20772287178392 ...)
@@ -132,11 +139,11 @@
 ;;
 (defn random-in-range [lower upper]
 
-  (let [r (+ (rand (- upper lower))
-             lower)]
-
-    (if (> r upper)
-      upper r)))
+  (let [r (rand upper)]
+    (if (>= r lower)
+      r
+      (+ (rand (- upper lower))
+         lower))))
 
 
 (defn stochastic-k [last-price low-price high-price]
@@ -190,10 +197,12 @@
    (generate-timeseries pricelist (tc/now)))
 
   ([pricelist datetime]
-   (->> (map (fn [x y] [x y])
-             (map (fn [x] {:last-trade-time (tco/to-date x)}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
-             (map (fn [x] {:last-trade-price x}) pricelist))
-        (map (fn [x] (merge (first x) (second x)))))))
+
+   (map (fn [x y]
+           {:last-trade-time (tco/to-date x)
+            :last-trade-price y})
+        (iterate #(tc/plus % (tc/seconds (rand 4))) datetime)
+        pricelist)))
 
 
 ;;
