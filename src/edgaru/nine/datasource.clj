@@ -165,34 +165,35 @@
      (< sample-val 0.66) :b
      :else :c)))
 
+
 (defn generate-polynomial-sequence []
 
-  (def one (randomize-vertical-dilation polynomial 0.5 2))
-  (def two (randomize-horizontal-dilation one 0.5 2))
-  (def polyn-partial (partial two 3))
+  (let [one (randomize-vertical-dilation polynomial 0.5 2)
+        two (randomize-horizontal-dilation one 0.5 2)
+        polyn-partial (partial two 3)
 
-  (def xinterc-polyn-left (find-xintercept - polynomial-xintercept))
-  (def xinterc-polyn-right (find-xintercept + polynomial-xintercept))
+        xinterc-polyn-left (find-xintercept - polynomial-xintercept)
+        xinterc-polyn-right (find-xintercept + polynomial-xintercept)
 
+        granularityP (rand-double-in-range 0.1 1)
+        xsequenceP (iterate (partial + granularityP) xinterc-polyn-left)]
 
-  (def granularityP (rand-double-in-range 0.1 1))
-  (def xsequenceP (iterate (partial + granularityP) xinterc-polyn-left))
-
-  (map polyn-partial xsequenceP))
+    (map polyn-partial xsequenceP)))
 
 (defn generate-sine-sequence []
 
-  (def ein (randomize-vertical-dilation sine 0.5 2.7))
-  (def zwei (randomize-horizontal-dilation ein 0.3 2.7))
-  (def sine-partial (partial zwei 0))
+  (let [ein (randomize-vertical-dilation sine 0.5 2.7)
+        zwei (randomize-horizontal-dilation ein 0.3 2.7)
+        sine-partial (partial zwei 0)
 
-  (def xinterc-sine-left (find-xintercept - sine-xintercept))
-  (def xinterc-sine-right (find-xintercept + sine-xintercept))
+        xinterc-sine-left (find-xintercept - sine-xintercept)
+        xinterc-sine-right (find-xintercept + sine-xintercept)
 
-  (def granularityS (rand-double-in-range 0.1 1))
-  (def xsequenceS (iterate (partial + granularityS) xinterc-sine-left))
+        granularityS (rand-double-in-range 0.1 1)
+        xsequenceS (iterate (partial + granularityS) xinterc-sine-left)]
 
-  (map sine-partial xsequenceS))
+    (map sine-partial xsequenceS)))
+
 
 (defn generate-oscillating-sequence []
 
