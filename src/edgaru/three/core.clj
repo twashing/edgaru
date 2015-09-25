@@ -6,11 +6,12 @@
 ;;
 (defn random-in-range [lower upper]
 
-  (let [r (+ (rand (- upper lower))
-             lower)]
+  (let [r (rand upper)]
+    (if (>= r lower)
+      r
+      (+ (rand (- upper lower))
+         lower))))
 
-    (if (> r upper)
-      upper r)))
 
 (defn stochastic-k [last-price low-price high-price]
   (let [hlrange (- high-price (if (> low-price 0)
@@ -63,10 +64,12 @@
    (generate-timeseries pricelist (tc/now)))
 
   ([pricelist datetime]
-   (->> (map (fn [x y] [x y])
-             (map (fn [x] {:last-trade-time (tco/to-date x)}) (iterate #(tc/plus % (tc/seconds (rand 4))) datetime))
-             (map (fn [x] {:last-trade-price x}) pricelist))
-        (map (fn [x] (merge (first x) (second x)))))))
+
+   (map (fn [x y]
+           {:last-trade-time (tco/to-date x)
+            :last-trade-price y})
+        (iterate #(tc/plus % (tc/seconds (rand 4))) datetime)
+        pricelist)))
 
 
 (comment
