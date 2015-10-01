@@ -33,3 +33,57 @@
 
 (areduce xs i ret 0
          (+ ret (aget xs i)))
+
+(comment
+
+
+  ;; Refs
+  (def one (ref []))
+  (dosync
+   (alter one conj 12))
+
+  (deref one)
+
+  @one
+
+  (dosync
+   (ref-set one [:fubar]))
+
+  ;; Atoms
+  (def two (atom []))
+
+  (swap! two conj 12)
+
+  @two
+
+  (reset! two [:fubar])
+
+  ;; Agents
+  (def three (agent []))
+
+  (send three conj 12)
+
+  (restart-agent three [:fubar])
+
+  (send three inc)
+
+
+  ;; Vars
+  (def four [])
+
+  (alter-var-root (var four) conj 12)
+
+  four
+
+  (with-local-vars [x 1]
+    (println four)
+    (var-set four [:fubar])
+    (println four))
+
+  (with-local-vars [thing [:fubar]]
+    (println four)
+    )
+
+  four
+
+  )

@@ -1,4 +1,4 @@
-(ns edgaru.seven
+(ns edgaru.seven.component
   (:require [clojure.java.io :as io]
             [clojure.core.async :as async :refer [go go-loop chan close! <! >!]]
             [com.stuartsierra.component :as component]
@@ -7,6 +7,7 @@
             [edgaru.seven.analytics :as analytics]
             [edgaru.seven.datasource :as datasource])
   (:import [java.text SimpleDateFormat]))
+
 
 
 (defn generate-file-name [fname]
@@ -131,6 +132,20 @@
   (write-data "f2" '(:some :thing))
 
 
+  (reduce (fn [a v]
+            (if (< a 100)
+              (+ a v)
+              (reduced :big)))
+          (range 10))
+
+  (reduce (fn [[prev acc] i]
+            (if (> i 10)
+              (reduced acc)
+              [i (+ prev i)]))
+          [0 0]
+          (range))
+
+
   ;; 1.
   (def price-list (datasource/generate-prices))
   (def time-series (core/generate-timeseries price-list))
@@ -171,4 +186,4 @@
 
   (alter-var-root #'system component/stop)
 
-  )
+)

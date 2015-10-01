@@ -335,7 +335,10 @@
   ([] (generate-prices (BetaDistribution. 2.0 4.1)))
   ([beta-distribution]
 
-   (generate-prices-reductions beta-distribution)))
+   (map (fn [x]
+          (if (neg? x) (* -1 x) x))
+        (distinct
+         (apply concat (generate-prices-reductions beta-distribution))))))
 
 
 (defmethod print-method clojure.lang.PersistentQueue
@@ -363,7 +366,7 @@
 
   (last (take 10 (generate-prices bdist)))
 
-  )
+  (take 100 (generate-prices)))
 
 
 ;; Traversing Data
